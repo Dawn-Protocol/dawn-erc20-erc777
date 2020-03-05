@@ -1,4 +1,5 @@
 require("ts-node/register");
+require("espower-typescript/guess");
 
 const path = require("path");
 const HDWalletProvider = require("@truffle/hdwallet-provider");

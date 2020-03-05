@@ -14,8 +14,10 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "espower-typescript": "^9.0.2",
     "lite-server": "^2.3.0",
-    "truffle-typings": "^1.0.8",
+    "power-assert": "^1.6.1",
+    "truffle-typings": "git://github.com/miohtama/truffle-typings.git#power-assert-fix",
     "ts-node": "^8.6.2",
     "typechain": "^1.0.5",
     "typechain-target-truffle": "^1.0.2",
@@ -26,8 +28,14 @@
     "dotenv": "^8.2.0",
     "ganache-core": "^2.10.2",
     "jest": "^25.1.0",
+    "mocha": "^7.1.0",
     "openzeppelin-solidity": "^2.5.0",
     "solc": "^0.6.3",
+    "truffle": "^5.1.16",
     "web3": "^1.2.6"
-  }
+  },
+  "require": [
+    "ts-node/register",
+    "espower-typescript/guess"
+  ]
 }

@@ -50,3 +50,7 @@ If you want to use Mock token and Ganache inside your frontend/backend developme
 
 [Truffle and TypeChain example](https://github.com/ethereum-ts/truffle-typechain-example)
 
+# TODO
+
+* [Open issue](https://github.com/ethereum-ts/truffle-typings/issues/17) How to make [power-assert](https://github.com/power-assert-js/espower-typescript) to work with [truffle-typings](https://www.npmjs.com/package/truffle-typings),
+so that easy `assert()` could be used instead of expect.
