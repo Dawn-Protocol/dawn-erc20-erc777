@@ -1,0 +1,33 @@
+{
+  "name": "dawntoken",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "generate": "truffle compile && typechain --target truffle './build/**/*.json'",
+    "test": "truffle test && yarn tsc",
+    "tsc": "tsc --noEmit"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "lite-server": "^2.3.0",
+    "truffle-typings": "^1.0.8",
+    "ts-node": "^8.6.2",
+    "typechain": "^1.0.5",
+    "typechain-target-truffle": "^1.0.2",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "@truffle/hdwallet-provider": "^1.0.32",
+    "dotenv": "^8.2.0",
+    "ganache-core": "^2.10.2",
+    "jest": "^25.1.0",
+    "openzeppelin-solidity": "^2.5.0",
+    "solc": "^0.6.3",
+    "web3": "^1.2.6"
+  }
+}
