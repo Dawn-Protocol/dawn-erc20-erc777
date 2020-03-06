@@ -1,20 +1,12 @@
 {
   "compilerOptions": {
-    "target": "es2017",
     "module": "commonjs",
-    "strict": true,
-    "moduleResolution": "node",
-    "noImplicitThis": true,
-    "alwaysStrict": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowSyntheticDefaultImports": true, // https://github.com/ethereum/web3.js/issues/2363#issuecomment-462637089
-    "lib": ["es2015", "esnext.asynciterable"],
-    "sourceMap": true,
-    "typeRoots": ["./node_modules/@types", "./types"],
-    "types": ["node", "truffle-contracts"]
+    "target": "es2015",
+    "inlineSourceMap": true,
+    "outDir": "build/dist"
   },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules", "example", "build"]
+  "compileOnSave": false,
+  "exclude": [
+    "node_modules"
+  ]
 }
