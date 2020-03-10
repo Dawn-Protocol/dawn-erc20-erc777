@@ -56,3 +56,14 @@ If you want to use Mock token and Ganache inside your frontend/backend developme
 
 * [Open issue](https://github.com/ethereum-ts/truffle-typings/issues/17) How to make [power-assert](https://github.com/power-assert-js/espower-typescript) to work with [truffle-typings](https://www.npmjs.com/package/truffle-typings),
 so that easy `assert()` could be used instead of expect.
+
+* Why ganache-core pulled in git hooks for husky
+
+```#!/bin/sh
+# husky
+
+# Hook created by Husky v4.0.10 (https://github.com/typicode/husky#readme)
+#   At: 3/10/2020, 5:17:30 PM
+#   From: /Users/mikkoohtamaa/code/dawn/dawn-erc20/node_modules/ganache-core/node_modules/husky (https://github.com/typicode/husky#readme)
+#   With: npm
+```
