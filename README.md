@@ -48,9 +48,21 @@ npm run test
 
 If you want to use Mock token and Ganache inside your frontend/backend development tests.
 
+# Deployment strategy
+
+Two different multi-signature wallets are needed.
+
+* Token owner who is responsible for admin functions for the token contract itself like `pause()` from `ERC20Pausable`
+
+* Proxy owner who is responsible for calling `upgradeTo()` if a contract upgrade is needed
+
+* [Due to the fact how Proxy contract works, these two addresses cannot be the same wallet](https://docs.openzeppelin.com/upgrades/2.7/proxies#transparent-proxies-and-function-clashes)
+
 # Other
 
-[Truffle and TypeChain example](https://github.com/ethereum-ts/truffle-typechain-example)
+* [More about OpenZeppelin smart contract upgrade pattern](https://docs.openzeppelin.com/upgrades/2.7/)
+
+* [Truffle and TypeChain example](https://github.com/ethereum-ts/truffle-typechain-example) (a legacy reference - was a lot of headache and both Truffle and TypeChain have now been removed)
 
 # TODO
 
