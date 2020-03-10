@@ -17,7 +17,7 @@ This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](http
   This makes it easier to use token in various decentralised finance services like decentralised exchanages (DEXes)
   and lending pools.
 
-* The token is upgradeable through [OpenZeppelin proxy pattern](https://docs.openzeppelin.com/learn/upgrading-smart-contracts).
+* The token is upgradeable through [OpenZeppelin proxy pattern](https://docs.openzeppelin.com/learn/upgrading-smart-contracts) ([actual contracts](https://github.com/OpenZeppelin/openzeppelin-sdk/tree/master/packages/lib/contracts/upgradeability)).
 
 * Token implements EOS ERC-20 like freeze that will be activated if and when the tokens are migrated to a new network.
   This is implemented using [OpenZeppelin pausable trait](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20Pausable.sol).
@@ -44,7 +44,7 @@ Then you can run tests with Jest:
 npm run test
 ```
 
-## Integrating token testing in third party pplications
+## Integrating token testing in frontend and backend
 
 If you want to use Mock token and Ganache inside your frontend/backend development tests.
 
@@ -62,7 +62,7 @@ Two different multi-signature wallets are needed.
 
 * [More about OpenZeppelin smart contract upgrade pattern](https://docs.openzeppelin.com/upgrades/2.7/)
 
-* [Truffle and TypeChain example](https://github.com/ethereum-ts/truffle-typechain-example) (a legacy reference - was a lot of headache and both Truffle and TypeChain have now been removed)
+* [Truffle and TypeChain example](https://github.com/ethereum-ts/truffle-typechain-example) (a legacy reference - was a lot of pain and both Truffle and TypeChain have now been removed)
 
 # TODO
 

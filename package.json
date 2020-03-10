@@ -29,6 +29,7 @@
     "babel-core": "^6.26.3"
   },
   "dependencies": {
+    "@openzeppelin/contracts-ethereum-package": "^2.4.0",
     "@truffle/hdwallet-provider": "^1.0.32",
     "bignumber.js": "^9.0.0",
     "dotenv": "^8.2.0",
