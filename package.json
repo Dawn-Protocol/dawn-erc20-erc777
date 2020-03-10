@@ -41,7 +41,9 @@
   "jest": {
     "verbose": true,
     "preset": "ts-jest",
-    "testMatch": ["**/tests/*.ts"],
+    "testMatch": [
+      "**/tests/*.ts"
+    ],
     "testEnvironment": "node",
     "globals": {
       "ts-jest": {
