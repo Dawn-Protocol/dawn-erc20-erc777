@@ -8,7 +8,7 @@ import '@openzeppelin/contracts/ownership/Ownable.sol';
 /**
  * Swap old 1ST token to new DAWN token
  */
-contract TokeSwap is Pausable, Ownable {
+contract TokenSwap is Pausable, Ownable {
 
   IERC20 oldToken;
   IERC20 newToken;
@@ -59,6 +59,13 @@ contract TokeSwap is Pausable, Ownable {
    */
   function getCurrentlySwappedSupply() public view returns(uint) {
     return oldToken.balanceOf(address(this));
+  }
+
+  /**
+   * How much tokens have been swapped so far
+   */
+  function getTokensLeftToSwap() public view returns(uint) {
+    return newToken.allowance(owner(), address(this));
   }
 
   // Allows admin to burn old tokens
