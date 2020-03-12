@@ -1,3 +1,7 @@
+/**
+ * Test ERC-20 pausable core functionality
+ */
+
 import assert = require('assert');
 
 import { accounts, contract } from '@openzeppelin/test-environment';

@@ -1,0 +1,25 @@
+// https://github.com/microsoft/vscode-recipes/tree/master/debugging-jest-tests
+{
+  "version": "0.2.0",
+  "configurations": [
+
+      {
+          "type": "node",
+          "request": "launch",
+          "name": "Jest All",
+          "program": "${workspaceFolder}/node_modules/.bin/jest",
+          "args": [
+              "--runInBand"
+          ],
+          "console": "integratedTerminal",
+          "internalConsoleOptions": "neverOpen",
+          "disableOptimisticBPs": true,
+          "windows": {
+              "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+          },
+          "env": {
+              "PATH": "/Users/moo/.nvm/versions/node/v11.0.0/bin:${env:PATH}"
+          },
+      },
+  ]
+}

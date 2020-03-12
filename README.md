@@ -26,7 +26,19 @@ This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](http
 
 * [GSN support: TODO](https://forum.openzeppelin.com/t/creating-an-erc-20-token-that-supports-gsn-transactions/2425)
 
+# Software versions used
+
+* solc 0.5.16
+
+* Node 0.12
+
 # Testing
+
+You need to manual compile contracts before running tests:
+
+```sh
+npx truffle compile
+```
 
 Jest testing is [based on this example](https://github.com/adrianmcli/ganache-jest-example).
 
@@ -42,6 +54,59 @@ Then you can run tests with Jest:
 
 ```sh
 npm run test
+```
+
+## Running a single text
+
+Example:
+
+```sh
+npm test -- -t 'Proxy should have an admin right'
+```
+
+## Debugging tests in Visual Studio Code
+
+### Automatically attaching to a terminal command
+
+Use `CMD + F1` and turn on Debugger Auto Attach in command palette.
+
+Then you can run individual tests and VSCode will attach
+
+```typescript
+node --inspect-brk node_modules/.bin/jest --runInBand -t 'The supply should match original token'
+```
+
+### Using Launch config
+
+launch.json example:
+
+```json
+// https://github.com/microsoft/vscode-recipes/tree/master/debugging-jest-tests
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Jest All",
+            "program": "${workspaceFolder}/node_modules/.bin/jest",
+            "args": [
+                "--runInBand",
+                "--config",
+                "./test/jest-e2e.json"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "disableOptimisticBPs": true,
+            "windows": {
+                "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+            },
+            "env": {
+                "PATH": "/Users/moo/.nvm/versions/node/v11.0.0/bin:${env:PATH}"
+            },
+        },
+    ]
+}
 ```
 
 ## Integrating token testing in frontend and backend
@@ -70,6 +135,8 @@ Two different multi-signature wallets are needed.
 so that easy `assert()` could be used instead of expect.
 
 * Why ganache-core pulled in git hooks for husky
+
+* [Why is Visual Studio Code Solidity extension using solc 0.6](https://github.com/juanfranblanco/vscode-solidity/issues/163)
 
 ```#!/bin/sh
 # husky
