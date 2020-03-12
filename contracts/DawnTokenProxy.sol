@@ -4,11 +4,11 @@ pragma solidity ^0.5.0;
 import "@openzeppelin/upgrades/contracts/upgradeability/AdminUpgradeabilityProxy.sol";
 
 /**
- * The upgrade root for Dawn token.
+ * The upgrade proxy for Dawn token.
  *
  * 1. Deploy first implementation of token code
  * 2. Deploy proxy pointing to this implementation and having proxy multisig wallet as the owner
  *
  */
-contract DawnProxy is AdminUpgradeabilityProxy {
+contract DawnTokenProxy is AdminUpgradeabilityProxy {
 }

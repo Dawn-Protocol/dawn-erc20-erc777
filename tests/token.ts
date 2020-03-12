@@ -13,15 +13,21 @@ const TOKEN_1ST_TOTAL_SUPPLY = new BN('93468683899196345527500000');
 // Ethereum accounts used in these tests
 const [
   deployer,  // Deploys the smart contract
-  owner, // Owns the initial supply
+  owner, // Token owner
   user2 // Random dude who wants play with tokens
 ] = accounts;
 
 // Loads a compiled contract using OpenZeppelin test-environment
-const Dawn = contract.fromArtifact('Dawn');
+const DawnTokenImpl = contract.fromArtifact('DawnTokenImpl');
+let token = null;  // ERC20Pausable
 
-beforeEach(() => {
-  // No setup
+beforeEach(async () => {
+  // Here we refer the token contract directly without going through the proxy
+
+  token = await DawnTokenImpl.new(owner, { from: deployer });
+
+  // Use upgrade initialiser pattern to set up initial value
+  await token.initialize(deployer, owner);
 });
 
 afterEach(() => {
@@ -29,15 +35,20 @@ afterEach(() => {
 });
 
 test('The supply should match original token', async () => {
-  const token = await Dawn.new(owner, { from: deployer });
   const supply = await token.totalSupply();
 
   // Big number does not have power-assert support yet - https://github.com/power-assert-js/power-assert/issues/124
   assert(supply.toString() == TOKEN_1ST_TOTAL_SUPPLY.toString());
 });
 
+
+test('Pauser role should be only for the token owner', async () => {
+  assert(await token.isPauser(owner) === true);
+  assert(await token.isPauser(deployer) === false);
+});
+
+
 test("Token should allow transfer", async () => {
-  const token = await Dawn.new(owner, { from: deployer });
   const amount = new BN("1") * new BN("1e18");  // Transfer 1 whole token
   await token.transfer(user2, amount, { from: owner });
   const balanceAfter = await token.balanceOf(user2);
@@ -45,7 +56,6 @@ test("Token should allow transfer", async () => {
 });
 
 test("Token tranfers are disabled after pause", async () => {
-  const token = await Dawn.new(owner, { from: deployer });
   const amount = new BN("1") * new BN("1e18");  // Transfer 1 whole token
   // Pause
   await token.pause({ from: owner });
@@ -56,9 +66,7 @@ test("Token tranfers are disabled after pause", async () => {
   });
 });
 
-
 test("Token tranfers can be paused by the owner only", async () => {
-  const token = await Dawn.new(owner, { from: deployer });
   const amount = new BN("1") * new BN("1e18");  // Transfer 1 whole token
   // Transfer tokens fails after the pause
   assert.rejects(async () => {
@@ -67,7 +75,6 @@ test("Token tranfers can be paused by the owner only", async () => {
 });
 
 test("Token cannot be send to 0x0 null address by accident", async () => {
-  const token = await Dawn.new(owner, { from: deployer });
   const amount = new BN("1") * new BN("1e18");  // Transfer 1 whole token
   assert.rejects(async () => {
     await token.transfer(constants.ZERO_ADDRESS, amount, { from: owner });
