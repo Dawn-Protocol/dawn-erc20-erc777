@@ -149,9 +149,9 @@ contract FirstBloodTokenMock is StandardToken, SafeMath {
     string public symbol = "1ST";
     uint public decimals = 18;
 
-    constructor() public {
+    constructor(address owner) public {
       // https://etherscan.io/address/0xaf30d2a7e90d7dc361c8c4585e9bb7d2f6f15bc7#readContract
-      balances[msg.sender] = 93468683899196345527500000;
+      balances[owner] = 93468683899196345527500000;
       totalSupply = 93468683899196345527500000;
     }
 

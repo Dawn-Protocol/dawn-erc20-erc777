@@ -32,6 +32,8 @@ This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](http
 
 * Node 0.12
 
+* openzeppelin-solidity 2.5.0
+
 # Testing
 
 You need to manual compile contracts before running tests:
