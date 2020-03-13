@@ -36,6 +36,8 @@ This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](http
 
 * openzeppelin-solidity 2.5.0
 
+* [npx](https://www.npmjs.com/package/npx)
+
 # Testing
 
 You need to manual compile contracts before running tests:
@@ -51,7 +53,7 @@ Jest testing is [based on this example](https://github.com/adrianmcli/ganache-je
 You need to generate ABI files in `build/`
 
 ```sh
-truffle compile
+npx truffle compile
 ```
 
 Then you can run tests with Jest:

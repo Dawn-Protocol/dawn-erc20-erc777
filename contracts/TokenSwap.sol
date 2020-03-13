@@ -1,41 +1,67 @@
 pragma solidity ^0.5.0;
 
-// https://github.com/OpenZeppelin/openzeppelin-contracts/tree/master/contracts
+// https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/master/contracts/
+// https://github.com/OpenZeppelin/openzeppelin-sdk/tree/master/packages/lib/contracts
 import '@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
+import './Recoverable.sol';
 
 /**
- * Swap old 1ST token to new DAWN token
+ * Swap old 1ST token to new DAWN token.
+ *
+ * Recoverable allos us to recover any wrong tokens user send here by an accident.
+ *
+ * This contract *is not* behind a proxy.
+ * We use Initializable pattern here to be in line with the other contracts.
+ * Normal constructor would work as well, but then we would be mixing
+ * base contracts from openzeppelin-contracts and openzeppelin-sdk both,
+ * which is a huge mess.
+ *
  */
-contract TokenSwap is Pausable, Ownable {
+contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
 
   IERC20 oldToken;
   IERC20 newToken;
 
+  /* Where old tokens are send permantly to die */
   address public burnDestination;
 
+  /* Public key of our server-side signing mechanism to ensure everyone who calls swap is whitelisted */
+  address public signerAddress;
+
+  /* How many tokens we have successfully swapped */
   uint public totalSwapped;
 
   /**
+   *
    * 1. Owner is a multisig wallet
    * 2. Owner holds newToken supply
    * 3. Owner does approve() on this contract for the full supply
    * 4. Owner can pause swapping
    * 5. Owner can send tokens to be burned
+   *
+   * @dev Using initializeTokenSwap() function name to avoid conflicts.
    */
-  constructor(address owner, address _oldToken, address _newToken, address _burnDestination) Pausable() Ownable() public {
+  function initializeTokenSwap(address sender, address owner, address signer, address _oldToken, address _newToken, address _burnDestination)
+    public initializer {
+
+    Pausable.initialize(sender);
+    Ownable.initialize(sender);
+
     oldToken = IERC20(_oldToken);
     newToken = IERC20(_newToken);
-    setBurnDestination(_burnDestination);
     require(oldToken.totalSupply() == newToken.totalSupply(), "Cannot create swap, old and new token supply differ");
+
+    setBurnDestination(_burnDestination);
+    setSignerAddress(signer);
 
     // Get rid of deployment account for Pausable
     _addPauser(owner);
     _removePauser(msg.sender);
 
     // Get rid of deployment account for Ownable
-    transferOwnership(owner);
+    _transferOwnership(owner);
   }
 
   function _swap(address whom, uint amount) internal {
@@ -77,4 +103,7 @@ contract TokenSwap is Pausable, Ownable {
     burnDestination = _destination;
   }
 
+  function setSignerAddress(address _signerAddress) public onlyOwner {
+    signerAddress = _signerAddress;
+  }
 }
