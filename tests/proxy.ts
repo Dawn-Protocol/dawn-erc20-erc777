@@ -1,5 +1,5 @@
 /**
- * Test ugprade proxy functionality.
+ * Test ugprade proxy functionality and proxy transparency.
  */
 
 import assert = require('assert');
@@ -41,6 +41,13 @@ beforeEach(async () => {
   // Here we refer the token contract directly without going through the proxy
   tokenImpl = await DawnTokenImpl.new(owner, { from: deployer });
 
+  // Proxy contract will
+  // 1. Store all data, current implementation and future implementations
+  // 2. Have a mechanism for proxy owner to change the implementation pointer to a new smart contract
+  //
+  // Note that this means that you can never call tokenImpl contract directly - because if you call it directly
+  // all the memory (data) is missing as it is hold on the proxy contract
+  //
   // Copied from
   // https://github.com/OpenZeppelin/openzeppelin-sdk/blob/master/packages/lib/test/contracts/upgradeability/AdminUpgradeabilityProxy.test.js
   const initializeData = Buffer.from('');
@@ -56,7 +63,8 @@ beforeEach(async () => {
   // e.g. refer to Proxy.admin() directly
   proxy = new Proxy(proxyContract.address);
 
-  await tokenImpl.initialize(deployer, owner);
+  // This is the constructor in OpenZeppelin upgradeable pattern
+  await token.initialize(deployer, owner);
 });
 
 test('Proxy owner should be initially proxy multisig', async () => {
@@ -68,11 +76,6 @@ test('Proxy should point to the first implementation ', async () => {
 });
 
 test('Proxy supply should match the original token', async () => {
-
-  const tokenImplSupply = await tokenImpl.totalSupply();
-  // Big number does not have power-assert support yet - https://github.com/power-assert-js/power-assert/issues/124
-  assert(tokenImplSupply.toString() == TOKEN_1ST_TOTAL_SUPPLY.toString());
-
   const supply = await token.totalSupply();
 
   // We get a different supply than above
