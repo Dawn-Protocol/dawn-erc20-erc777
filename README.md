@@ -17,6 +17,8 @@ This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](http
   This makes it easier to use token in various decentralised finance services like decentralised exchanages (DEXes)
   and lending pools.
 
+* Token smart contract supports recovering ether and tokens accidentally send into it
+
 * The token is upgradeable through [OpenZeppelin proxy pattern](https://docs.openzeppelin.com/learn/upgrading-smart-contracts) ([actual contracts](https://github.com/OpenZeppelin/openzeppelin-sdk/tree/master/packages/lib/contracts/upgradeability)).
 
 * Token implements EOS ERC-20 like freeze that will be activated if and when the tokens are migrated to a new network.

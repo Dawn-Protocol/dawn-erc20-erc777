@@ -1,9 +1,9 @@
 pragma solidity ^0.5.0;
 
 // https://github.com/OpenZeppelin/openzeppelin-contracts/tree/master/contracts
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/lifecycle/Pausable.sol';
-import '@openzeppelin/contracts/ownership/Ownable.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 
 /**
  * Swap old 1ST token to new DAWN token

@@ -2,6 +2,8 @@ pragma solidity ^0.5.0;
 
 // https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/master/contracts/token/ERC20/ERC20Pausable.sol
 import '@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20Pausable.sol';
+import './Recoverable.sol';
+
 
 /**
  * First implementation of Dawn token.
@@ -9,7 +11,7 @@ import '@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20Paus
  * Needs to be set up behind a proxy contract.
  *
  */
-contract DawnTokenImpl is ERC20Pausable {
+contract DawnTokenImpl is Recoverable, ERC20Pausable {
 
   // Because of Upgradeability, not of the variables can be initialised in place
   // https://docs.openzeppelin.com/upgrades/2.7/writing-upgradeable#avoid-initial-values-in-field-declarations
@@ -23,6 +25,7 @@ contract DawnTokenImpl is ERC20Pausable {
   function initialize(address sender, address manager) public initializer  {
 
     ERC20Pausable.initialize(sender);
+    Ownable.initialize(sender);
 
     name = "Dawn";
     symbol = "DAWN";
@@ -31,5 +34,8 @@ contract DawnTokenImpl is ERC20Pausable {
     _mint(manager, INITIAL_SUPPLY);
     _addPauser(manager);  // Set the managing multisig wallet as the pauser
     _removePauser(sender);  // Remove the deployment account as the pauser
+
+    // Set who can recover ETH and tokens send to this smart contract
+    _transferOwnership(manager);
   }
 }

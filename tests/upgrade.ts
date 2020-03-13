@@ -1,11 +1,11 @@
 /**
- * Test that token functionality works through the proxy.
+ * Test ugprade functionality, so that we retain all the data and new functionality activates.
  */
 
 import assert = require('assert');
 
 import { accounts, contract } from '@openzeppelin/test-environment';
-import { Proxy } from '@openzeppelin/upgrades';
+import { Proxy } from '@openzeppelin/upgrades'; // https://github.com/OpenZeppelin/openzeppelin-sdk/blob/master/packages/lib/src/proxy/Proxy.ts
 import { ZWeb3 } from '@openzeppelin/upgrades';
 
 import {
@@ -20,15 +20,21 @@ const [
   deployer,  // Deploys the smart contract
   owner, // Token owner - an imaginary multisig wallet
   proxyOwner, // Who owns the proxy contract - an imaginary multisig wallet
-  user2 // Random dude who wants play with tokens
+  user1, // Random dude who wants play with tokens
+  user2, // Random dude who wants play with tokens
+  allowedUser // Somebody using tokens through the allowance
 ] = accounts;
 
 // Loads a compiled contract using OpenZeppelin test-environment
 const DawnTokenImpl = contract.fromArtifact('DawnTokenImpl');   // ERC20Pausable subclass
+const V2TokenImpl = contract.fromArtifact('UpgradedTokenTestImpl');   // ERC20Pausable subclass
 const DawnTokenProxy = contract.fromArtifact('DawnTokenProxy');  // AdminUpgradeabilityProxy subclass
 
 let tokenImpl = null;  // ERC20Pausable
 let token = null;  // Proxied ERC20Pausable
+let v2TokenImpl = null; // UpgradeTokenTestImpl
+let v2Token = null;  // Proxied UpgradeTokenTestImpl
+
 let proxyContract = null;  // DawnTokenProxy depoyment, AdminUpgradeabilityProxy
 let proxy: Proxy = null;  // Zeppelin Proxy helper class
 
@@ -66,35 +72,61 @@ beforeEach(async () => {
 
   // This is the constructor in OpenZeppelin upgradeable pattern
   await token.initialize(deployer, owner);
+
+  // Make sure we have legacy data written in the contract memor
+  await doSomeActivity();
+
+  v2TokenImpl = await V2TokenImpl.new(owner, { from: deployer });
+  await proxyContract.upgradeTo(v2TokenImpl.address, { from: proxyOwner });
+
+  // Test V2
+  token = v2Token = await V2TokenImpl.at(proxyContract.address);
 });
 
-test('Proxy owner should be initially proxy multisig', async () => {
-  assert(await proxy.admin() == proxyOwner);
+
+test("V2 owneship looks right", async () => {
+  assert(await token.owner() == owner);
+  assert(await token.isPauser(owner) == true);
 });
 
-test('Proxy should point to the first implementation ', async () => {
-  assert(await proxy.implementation() == tokenImpl.address);
-});
 
-test('Proxy supply should match the original token', async () => {
+test("V1 legacy data is correct", async () => {
   const supply = await token.totalSupply();
   assert(supply.toString() == TOKEN_1ST_TOTAL_SUPPLY.toString());
+  assert((await token.balanceOf(user1)).toString() == new BN("105").toString());
+  assert((await token.balanceOf(user2)).toString() == new BN("45").toString());
+  assert((await token.allowance(user2, allowedUser)).toString() == new BN("15").toString());
 });
 
-test("Token should allow transfer", async () => {
-  const amount = new BN("1") * new BN("1e18");  // Transfer 1 whole token
-  await token.transfer(user2, amount, { from: owner });
-  const balanceAfter = await token.balanceOf(user2);
-  assert(balanceAfter.toString() == amount.toString());
+test("V1 functionality works after the update", async () => {
+  await token.transfer(user2, new BN("3"), { from: user1});
+  assert((await token.balanceOf(user1)).toString() == new BN("102").toString());
+  assert((await token.balanceOf(user2)).toString() == new BN("48").toString());
 });
 
-test("Token tranfers are disabled after pause", async () => {
-  const amount = new BN("1") * new BN("1e18");  // Transfer 1 whole token
-  // Pause
-  await token.pause({ from: owner });
-  assert(await token.paused());
-  // Transfer tokens fails after the pause
-  assert.rejects(async () => {
-    await token.transfer(user2, amount, { from: owner });
-  });
+
+test("V2 functionality works after the update", async () => {
+  const test = await v2Token.funnyNumbers(user1);
+  assert(test.toString() === new BN("0").toString());
+
+  await v2Token.makeNumberGoUp(new BN("10"), { from: user1 });
+  const test2 = await v2Token.funnyNumbers(user1);
+  assert(test2.toString() === new BN("10").toString());
+
+  const balance = await v2Token.funnyNumbers(user1);
+  assert(balance.toString() == new BN("10").toString());
 });
+
+/**
+ * Do some token transfers and operations we can verify also after the upgrade.
+ *
+ * @param owner Ethereum account
+ * @param user1 Ethereum account
+ * @param user2 Ethereum account
+ */
+async function doSomeActivity() {
+  await token.transfer(user1, new BN("100"), { from: owner });
+  await token.transfer(user2, new BN("50"), { from: owner });
+  await token.approve(allowedUser, new BN("20"), { from: user2 });
+  await token.transferFrom(user2, user1, new BN("5"), { from: allowedUser });
+}
