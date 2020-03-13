@@ -95,3 +95,16 @@ test('Swap is ready', async () => {
   assert(tokensToGo.toString() == SWAP_BUDGET.toString());
 });
 
+
+test('Cannot initialize twice', async () => {
+
+  assert.rejects(async () => {
+    await tokenSwap.initializeTokenSwap(deployer, owner, signer, oldToken.address, newToken.address, BURN_ADDRESS, { from: deployer });
+  });
+
+  assert.rejects(async () => {
+    await tokenSwap.initializeTokenSwap(deployer, owner, signer, oldToken.address, newToken.address, BURN_ADDRESS, { from: owner });
+  });
+
+});
+
