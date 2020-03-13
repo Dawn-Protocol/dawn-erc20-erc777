@@ -10,6 +10,9 @@ import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol
 /**
  * Allows to recover any tokens accidentally send on the smart contract.
  *
+ * Sending ethers on token contracts is not possible in the first place.
+ * as they are not payable.
+ *
  * https://twitter.com/moo9000/status/1238514802189795331
  */
 contract Recoverable is Ownable {
@@ -18,13 +21,6 @@ contract Recoverable is Ownable {
   /// @param token Token which will we rescue to the owner from the contract
   function recoverTokens(IERC20 token) public onlyOwner {
     token.transfer(owner(), tokensToBeReturned(token));
-  }
-
-  function recoverETH() public onlyOwner {
-    uint amount = address(this).balance;
-    // https://ethereum.stackexchange.com/a/65609/620
-    address payable dest = address(uint160(owner()));
-    dest.transfer(amount);
   }
 
   /// @dev Interface function, can be overwritten by the superclass
