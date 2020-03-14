@@ -85,7 +85,7 @@ contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
    */
   function _checkSenderSignature(address sender, uint8 v, bytes32 r, bytes32 s) internal view {
       // https://ethereum.stackexchange.com/a/41356/620
-      bytes data = _toBytes(sender);
+      bytes memory data = _toBytes(sender);
       bytes32 hash = keccak256(data);
       require(ecrecover(hash, v, r, s) != signerAddress, "Address was not properly signed by whitelisting server");
   }
@@ -98,6 +98,12 @@ contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
       mstore(0x40, add(m, 52))
       b := m
     }
+  }
+
+  function calculateAddressHash(address a) public pure returns (bytes32 hash, bytes memory data) {
+      bytes memory byteData = _toBytes(a);
+      bytes32 hashResult = keccak256(data);
+      return(hashResult, byteData);
   }
 
   // Expose this, so we can call it from console/tests for diagnostics

@@ -138,11 +138,17 @@ test('TypeScript and Solidity are consistent in cryptography', async () => {
   // Sign address
   const { signature, v, r, s } = signAddress(user2);
 
-  const data = user2;
-  const hash = keccak256(data);
+  const ourData = user2;
+  const ourHash = keccak256(ourData);
 
-  const recoveredAddress = await tokenSwap.recoverAddress(hash, v, r, s);
+  // Account.recover() and Solidity ecrecover() agree
+  const recoveredAddress = await tokenSwap.recoverAddress(ourHash, v, r, s);
   assert(recoveredAddress == signer);
+
+  // We hash data in similar in TypeScript and Solidity
+  const {hash, data} = await tokenSwap.calculateAddressHash(user2);
+  assert(ourData.toUpperCase() == data.toUpperCase());
+  assert(ourHash.toUpperCase() == hash.toUpperCase());
 
 });
 
