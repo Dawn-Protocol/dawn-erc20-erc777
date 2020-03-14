@@ -8,7 +8,7 @@ import { accounts, contract, web3 } from '@openzeppelin/test-environment';
 import { Proxy } from '@openzeppelin/upgrades';
 import { ZWeb3 } from '@openzeppelin/upgrades';
 import { Account }  from 'eth-lib/lib'; // https://github.com/MaiaVictor/eth-lib/blob/master/src/account.js
-import { sha3, keccak256 } from 'web3-utils';
+import { sha3, soliditySha3 } from 'web3-utils';
 
 import {
   BN,           // Big Number support
@@ -119,13 +119,9 @@ test('Cannot initialize twice', async () => {
 
 // Check that TypeScript implementation itself can sign and recover addresses correctly
 test('TypeScript is self-consistent in cryptography', async () => {
-
   // Sign address
   const { signature, v, r, s } = signAddress(user2);
-
-  const data = user2;
-  const hash = keccak256(data);
-
+  const hash = soliditySha3({t: 'address', v: user2 });
   const recoveredAddress = Account.recover(hash, signature);
   assert(recoveredAddress == signer);
 
@@ -138,18 +134,26 @@ test('TypeScript and Solidity are consistent in cryptography', async () => {
   // Sign address
   const { signature, v, r, s } = signAddress(user2);
 
-  const ourData = user2;
-  console.log(ourData);
-  const ourHash = keccak256(ourData);
+  // This is an address is a hexadecimal format
+  const ourData = user2.toLowerCase();
+
+  // https://web3js.readthedocs.io/en/v1.2.0/web3-utils.html#id23
+  // Convert address to bytes using "tight packing"
+  // and them calculates keccak-256 over the resulting bytes
+  const ourHash = soliditySha3({t: 'address', v: user2 });
+
+  // We hash data in similar in TypeScript and Solidity
+  const { hash, data } = await tokenSwap.calculateAddressHash(user2);
+  assert(ourData.toLowerCase() == data.toLowerCase());
+  assert(ourHash.toLowerCase() == hash.toLowerCase());
 
   // Account.recover() and Solidity ecrecover() agree
   const recoveredAddress = await tokenSwap.recoverAddress(ourHash, v, r, s);
   assert(recoveredAddress == signer);
 
-  // We hash data in similar in TypeScript and Solidity
-  const {hash, data} = await tokenSwap.calculateAddressHash(user2);
-  assert(ourData.toUpperCase() == data.toUpperCase());
-  assert(ourHash.toUpperCase() == hash.toUpperCase());
+  // Account.recover() and Solidity ecrecover() agree
+  const recoveredAddress2 = await tokenSwap.recoverAddress(hash, v, r, s);
+  assert(recoveredAddress2 == signer);
 
 });
 
@@ -167,6 +171,7 @@ test('Swap tokens', async () => {
   const { signature, v, r, s } = signAddress(user2);
 
   // Do the swap transaction
+  assert(await tokenSwap.signerAddress() == signer);
   await tokenSwap.swapTokensForSender(amount, v, r, s, { from: user2 });
 
   // See everything went well
@@ -184,11 +189,8 @@ function signAddress(address: string): { signature: string, v: string, r: string
 
   assert(address.substring(0, 2) == "0x");
 
-  // Address is 160 bits of data - or 20 bytes
-  const data = address;
-
-  // Hash is bytes32
-  const hash = keccak256(data);
+  // https://web3js.readthedocs.io/en/v1.2.0/web3-utils.html#id23
+  const hash = soliditySha3({t: 'address', v: user2 });
 
   assert(hash.substring(0, 2) == "0x");
 

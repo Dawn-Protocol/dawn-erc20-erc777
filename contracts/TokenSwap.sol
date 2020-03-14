@@ -85,28 +85,38 @@ contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
    */
   function _checkSenderSignature(address sender, uint8 v, bytes32 r, bytes32 s) internal view {
       // https://ethereum.stackexchange.com/a/41356/620
-      bytes memory data = _toBytes(sender);
-      bytes32 hash = keccak256(data);
-      require(ecrecover(hash, v, r, s) != signerAddress, "Address was not properly signed by whitelisting server");
+      bytes memory packed = abi.encodePacked(sender);
+      bytes32 hashResult = keccak256(packed);
+      require(ecrecover(hashResult, v, r, s) != signerAddress, "Address was not properly signed by whitelisting server");
   }
 
-  function _toBytes(address a) internal pure returns (bytes memory b) {
-    assembly {
-      let m := mload(0x40)
-      a := and(a, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
-      mstore(add(m, 20), xor(0x140000000000000000000000000000000000000000, a))
-      mstore(0x40, add(m, 52))
-      b := m
-    }
-  }
-
+ /**
+   * A test method exposed to be called from clients to compare that ABI packing and hashing
+   * is same across different programming languages.
+   *
+   * Does ABI encoding for an address and then calculates KECCAK-256 hash over the bytes.
+   *
+   * https://web3js.readthedocs.io/en/v1.2.0/web3-utils.html#soliditysha3
+   *
+   */
   function calculateAddressHash(address a) public pure returns (bytes32 hash, bytes memory data) {
-      bytes memory byteData = _toBytes(a);
-      bytes32 hashResult = keccak256(data);
-      return(hashResult, byteData);
+
+    // First we ABI encode the address to bytes.
+    // This is so called "tight packing"
+    // https://web3js.readthedocs.io/en/v1.2.0/web3-utils.html#soliditysha3
+    bytes memory packed = abi.encodePacked(a);
+
+    // Then we calculate keccak256 over the resulting bytes
+    bytes32 hashResult = keccak256(packed);
+
+    return(hashResult, packed);
   }
 
-  // Expose this, so we can call it from console/tests for diagnostics
+  /**
+   * Expose ecrecover, so we can call it from console/tests and compare results.
+   *
+   *
+   */
   function recoverAddress(bytes32 hash, uint8 v, bytes32 r, bytes32 s) public pure returns(address) {
     return ecrecover(hash, v, r, s);
   }
