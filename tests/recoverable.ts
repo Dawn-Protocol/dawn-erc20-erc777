@@ -2,38 +2,33 @@
  * Test we do not lose tokens or ether on our token contract address.
  */
 
-import assert = require('assert');
-
 import { accounts, contract } from '@openzeppelin/test-environment';
-import { Proxy } from '@openzeppelin/upgrades';
-import { ZWeb3 } from '@openzeppelin/upgrades';
-
+import { Proxy, ZWeb3 } from '@openzeppelin/upgrades';
 import {
-  BN,           // Big Number support https://github.com/indutny/bn.js
-  constants,    // Common constants, like the zero address and largest integers
+  BN, // Big Number support https://github.com/indutny/bn.js
 } from '@openzeppelin/test-helpers';
 
+import assert = require('assert');
 
 // Ethereum accounts used in these tests
 const [
-  deployer,  // Deploys the smart contract
+  deployer, // Deploys the smart contract
   owner, // Token owner - an imaginary multisig wallet
   proxyOwner, // Who owns the proxy contract - an imaginary multisig wallet
-  user2 // Random dude who wants play with tokens
+  user2, // Random dude who wants play with tokens
 ] = accounts;
 
 // Loads a compiled contract using OpenZeppelin test-environment
 const DawnTokenImpl = contract.fromArtifact('DawnTokenImpl');
-const DawnTokenProxy = contract.fromArtifact('DawnTokenProxy');  // AdminUpgradeabilityProxy subclass
+const DawnTokenProxy = contract.fromArtifact('DawnTokenProxy'); // AdminUpgradeabilityProxy subclass
 
-let tokenImpl = null;  // ERC20Pausable
-let token = null;  // Proxied ERC20Pausable
-let proxyContract = null;  // DawnTokenProxy depoyment, AdminUpgradeabilityProxy
-let proxy: Proxy = null;  // Zeppelin Proxy helper class
+let tokenImpl = null; // ERC20Pausable
+let token = null; // Proxied ERC20Pausable
+let proxyContract = null; // DawnTokenProxy depoyment, AdminUpgradeabilityProxy
 let web3 = null;
 
 beforeEach(async () => {
- // Fix global usage of ZWeb3.provider in Proxy.admin() call
+  // Fix global usage of ZWeb3.provider in Proxy.admin() call
   // https://github.com/OpenZeppelin/openzeppelin-sdk/issues/1504
   ZWeb3.initialize(DawnTokenImpl.web3.currentProvider);
   web3 = ZWeb3.web3;
@@ -52,7 +47,12 @@ beforeEach(async () => {
   // Copied from
   // https://github.com/OpenZeppelin/openzeppelin-sdk/blob/master/packages/lib/test/contracts/upgradeability/AdminUpgradeabilityProxy.test.js
   const initializeData = Buffer.from('');
-  proxyContract = await DawnTokenProxy.new(tokenImpl.address, proxyOwner, initializeData, { from: deployer });
+  proxyContract = await DawnTokenProxy.new(
+    tokenImpl.address,
+    proxyOwner,
+    initializeData,
+    { from: deployer },
+  );
 
   assert(proxyContract.address != null);
 
@@ -68,23 +68,20 @@ beforeEach(async () => {
   await token.initialize(deployer, owner);
 });
 
-test("Token contract is not payable", async () => {
-
-  const amount = web3.utils.toWei(new BN("1"), "ether");
+test('Token contract is not payable', async () => {
+  const amount = web3.utils.toWei(new BN('1'), 'ether');
   const userBalance = new BN(await web3.eth.getBalance(user2));
 
   assert(userBalance.gt(amount));
 
   // Accidentally send some ETH on the token
   assert.rejects(async () => {
-    await web3.eth.sendTransaction({from: user2, to: token.address, amount });
+    await web3.eth.sendTransaction({ from: user2, to: token.address, amount });
   });
-
 });
 
-test("Token contract can recover tokens", async () => {
-
-  const amount = web3.utils.toWei(new BN("1"), "ether");
+test('Token contract can recover tokens', async () => {
+  const amount = web3.utils.toWei(new BN('1'), 'ether');
   const firstOwnerBalance = await token.balanceOf(owner);
 
   await token.transfer(user2, amount, { from: owner });
@@ -97,7 +94,7 @@ test("Token contract can recover tokens", async () => {
 
   // We know how many tokens we can recover
   const recoverable = await token.tokensToBeReturned(token.address);
-  assert(recoverable.toString() == amount.toString(0));
+  assert(recoverable.toString() === amount.toString(0));
 
   await token.recoverTokens(token.address, { from: owner });
 
@@ -105,14 +102,11 @@ test("Token contract can recover tokens", async () => {
   assert(bal.isZero());
 
   const lastOwnerBalance = await token.balanceOf(owner);
-  assert(firstOwnerBalance.toString() == lastOwnerBalance.toString());
-
+  assert(firstOwnerBalance.toString() === lastOwnerBalance.toString());
 });
 
-
-test("Only owner can recover tokens", async () => {
-
-  const amount = web3.utils.toWei(new BN("1"), "ether");
+test('Only owner can recover tokens', async () => {
+  const amount = web3.utils.toWei(new BN('1'), 'ether');
 
   await token.transfer(user2, amount, { from: owner });
 
@@ -120,13 +114,16 @@ test("Only owner can recover tokens", async () => {
   await token.transfer(token.address, amount, { from: user2 });
 
   // We know how many tokens we can recover
-  const recoverable = await token.tokensToBeReturned(token.address);
+  await token.tokensToBeReturned(token.address);
 
-  assert.rejects(async () => {
-    // Double s instead of r s
-    await token.recoverTokens(token.address, { from: user2 });
-  }, {
-    message: 'Returned error: VM Exception while processing transaction: revert Ownable: caller is not the owner -- Reason given: Ownable: caller is not the owner.'
-  });
-
+  assert.rejects(
+    async () => {
+      // Double s instead of r s
+      await token.recoverTokens(token.address, { from: user2 });
+    },
+    {
+      message:
+        'Returned error: VM Exception while processing transaction: revert Ownable: caller is not the owner -- Reason given: Ownable: caller is not the owner.',
+    },
+  );
 });

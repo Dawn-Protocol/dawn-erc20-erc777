@@ -75,7 +75,7 @@ npx jest -t 'Proxy should have an admin right'
 Example:
 
 ```sh
-npx jest -t 'Proxy should have an admin right'
+npx jest --testPathPattern "tokenswap.ts"
 ```
 
 ## Debugging tests in Visual Studio Code
@@ -126,6 +126,49 @@ launch.json example:
 ## Integrating token testing in frontend and backend
 
 If you want to use Mock token and Ganache inside your frontend/backend development tests.
+
+# Linting
+
+Follow [AirBNB TypeScript Coding Conventions](https://www.npmjs.com/package/eslint-config-airbnb-typescript)
+
+## Visual Studio Code
+
+[Install ESLint Plugin](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+
+Add to your workspace settings.json
+
+```json
+    "editor.codeActionsOnSave": {
+        "source.fixAll": true
+    }
+
+    "prettier.eslintIntegration": true
+```
+
+## Prettier
+
+[Install Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode).
+
+Add in Visual Studio Code Settings JSON
+
+```json
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": false
+  }
+```
+
+You can manually format the source code with `CMD + F1` and choosing `Format document`.
+
+[See also this blog post](https://levelup.gitconnected.com/setting-up-eslint-with-prettier-typescript-and-visual-studio-code-d113bbec9857)
+
+## Command line
+
+Run `eslint` by hand:
+
+```bash
+npx eslint --ext .ts tests/
+```
 
 # Deployment strategy
 
