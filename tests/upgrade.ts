@@ -10,7 +10,6 @@ import {
 
 import assert = require('assert');
 
-
 // https://etherscan.io/address/0xaf30d2a7e90d7dc361c8c4585e9bb7d2f6f15bc7#readContract
 const TOKEN_1ST_TOTAL_SUPPLY = new BN('93468683899196345527500000');
 
@@ -69,12 +68,7 @@ beforeEach(async () => {
   // Copied from
   // https://github.com/OpenZeppelin/openzeppelin-sdk/blob/master/packages/lib/test/contracts/upgradeability/AdminUpgradeabilityProxy.test.js
   const initializeData = Buffer.from('');
-  proxyContract = await DawnTokenProxy.new(
-    tokenImpl.address,
-    proxyOwner,
-    initializeData,
-    { from: deployer },
-  );
+  proxyContract = await DawnTokenProxy.new(tokenImpl.address, proxyOwner, initializeData, { from: deployer });
 
   assert(proxyContract.address != null);
 
@@ -105,10 +99,7 @@ test('V1 legacy data is correct', async () => {
   assert(supply.toString() === TOKEN_1ST_TOTAL_SUPPLY.toString());
   assert((await token.balanceOf(user1)).toString() === new BN('105').toString());
   assert((await token.balanceOf(user2)).toString() === new BN('45').toString());
-  assert(
-    (await token.allowance(user2, allowedUser)).toString()
-      === new BN('15').toString(),
-  );
+  assert((await token.allowance(user2, allowedUser)).toString() === new BN('15').toString());
 });
 
 test('V1 functionality works after the update', async () => {

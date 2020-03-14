@@ -23,9 +23,7 @@ const [
 
 // Signer is the server-side private key that whitelists transactions.
 // For this account, we need to also have our private key
-const signerPrivateKey = sha3(
-  'You should really play MindSeize https://www.youtube.com/watch?v=BfCldtdjYzI',
-);
+const signerPrivateKey = sha3('You should really play MindSeize https://www.youtube.com/watch?v=BfCldtdjYzI');
 const signerAccount = Account.fromPrivate(signerPrivateKey);
 const signer = signerAccount.address;
 
@@ -50,9 +48,7 @@ let tokenSwap = null; // TokenSwap
 /**
  * Sign an address on the server side.
  */
-function signAddress(
-  address: string,
-): { signature: string; v: string; r: string; s: string } {
+function signAddress(address: string): { signature: string; v: string; r: string; s: string } {
   assert(address.startsWith('0x'));
 
   // https://web3js.readthedocs.io/en/v1.2.0/web3-utils.html#id23
@@ -87,12 +83,7 @@ beforeEach(async () => {
   // Copied from
   // https://github.com/OpenZeppelin/openzeppelin-sdk/blob/master/packages/lib/test/contracts/upgradeability/AdminUpgradeabilityProxy.test.js
   const initializeData = Buffer.from('');
-  proxyContract = await DawnTokenProxy.new(
-    newTokenImpl.address,
-    proxyOwner,
-    initializeData,
-    { from: deployer },
-  );
+  proxyContract = await DawnTokenProxy.new(newTokenImpl.address, proxyOwner, initializeData, { from: deployer });
 
   // This is the constructor in OpenZeppelin upgradeable pattern
   // Route all token calls to go through the proxy contract
@@ -103,15 +94,7 @@ beforeEach(async () => {
   tokenSwap = await TokenSwap.new({ from: deployer });
 
   // Use the Initializer pattern to bootstrap the contract
-  await tokenSwap.initializeTokenSwap(
-    deployer,
-    owner,
-    signer,
-    oldToken.address,
-    newToken.address,
-    BURN_ADDRESS,
-    { from: deployer },
-  );
+  await tokenSwap.initializeTokenSwap(deployer, owner, signer, oldToken.address, newToken.address, BURN_ADDRESS, { from: deployer });
 
   newToken.approve(tokenSwap.address, SWAP_BUDGET, { from: owner });
 });
@@ -134,27 +117,11 @@ test('Swap is ready', async () => {
 
 test('Cannot initialize twice', async () => {
   assert.rejects(async () => {
-    await tokenSwap.initializeTokenSwap(
-      deployer,
-      owner,
-      signer,
-      oldToken.address,
-      newToken.address,
-      BURN_ADDRESS,
-      { from: deployer },
-    );
+    await tokenSwap.initializeTokenSwap(deployer, owner, signer, oldToken.address, newToken.address, BURN_ADDRESS, { from: deployer });
   });
 
   assert.rejects(async () => {
-    await tokenSwap.initializeTokenSwap(
-      deployer,
-      owner,
-      signer,
-      oldToken.address,
-      newToken.address,
-      BURN_ADDRESS,
-      { from: owner },
-    );
+    await tokenSwap.initializeTokenSwap(deployer, owner, signer, oldToken.address, newToken.address, BURN_ADDRESS, { from: owner });
   });
 });
 
@@ -230,11 +197,8 @@ test('Swap all tokens', async () => {
   assert((await newToken.balanceOf(user2)).toString() === amount.toString());
 
   // New token amount on the token swap smart contract decreased
-  assert(
-    (await tokenSwap.getTokensLeftToSwap()).eq(tokensLeftToSwap.sub(amount)),
-  );
+  assert((await tokenSwap.getTokensLeftToSwap()).eq(tokensLeftToSwap.sub(amount)));
 });
-
 
 test('Swap part of tokens tokens', async () => {
   // Check that we are set up for the swap
@@ -261,16 +225,10 @@ test('Swap part of tokens tokens', async () => {
 
   // See everything went well
   assert((await oldToken.balanceOf(user2)).isZero() === false);
-  assert(
-    (await newToken.balanceOf(user2)).toString() === amountToSwap.toString(),
-  );
+  assert((await newToken.balanceOf(user2)).toString() === amountToSwap.toString());
 
   // New token amount on the token swap smart contract decreased
-  assert(
-    (await tokenSwap.getTokensLeftToSwap()).eq(
-      tokensLeftToSwap.sub(amountToSwap),
-    ),
-  );
+  assert((await tokenSwap.getTokensLeftToSwap()).eq(tokensLeftToSwap.sub(amountToSwap)));
 });
 
 test('Cannot swap with a bad signature', async () => {
