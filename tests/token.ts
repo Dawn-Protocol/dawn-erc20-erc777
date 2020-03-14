@@ -38,7 +38,7 @@ afterEach(() => {
   // No setup
 });
 
-test('The supply should match original token', async () => {
+test('The new token supply should match original token', async () => {
   const supply = await token.totalSupply();
 
   // Big number does not have power-assert support yet - https://github.com/power-assert-js/power-assert/issues/124

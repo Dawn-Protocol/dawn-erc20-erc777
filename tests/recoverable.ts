@@ -70,8 +70,7 @@ beforeEach(async () => {
 
 test("Token contract is not payable", async () => {
 
-  const amount = new BN(web3.utils.toWei(new BN("1"), "ether"));
-  const originalBalance = await web3.eth.getBalance(owner);
+  const amount = web3.utils.toWei(new BN("1"), "ether");
   const userBalance = new BN(await web3.eth.getBalance(user2));
 
   assert(userBalance.gt(amount));
@@ -85,7 +84,7 @@ test("Token contract is not payable", async () => {
 
 test("Token contract can recover tokens", async () => {
 
-  const amount = new BN(web3.utils.toWei(new BN("1"), "ether"));
+  const amount = web3.utils.toWei(new BN("1"), "ether");
   const firstOwnerBalance = await token.balanceOf(owner);
 
   await token.transfer(user2, amount, { from: owner });
@@ -93,19 +92,41 @@ test("Token contract can recover tokens", async () => {
   // Accidentally sending tokens to the smart contract
   await token.transfer(token.address, amount, { from: user2 });
 
-  let bal = new BN(await token.balanceOf(token.address));
+  let bal = await token.balanceOf(token.address);
   assert(bal.gt(0));
 
   // We know how many tokens we can recover
-  const recoverable = new BN(await token.tokensToBeReturned(token.address));
+  const recoverable = await token.tokensToBeReturned(token.address);
   assert(recoverable.toString() == amount.toString(0));
 
   await token.recoverTokens(token.address, { from: owner });
 
-  bal = new BN(await token.balanceOf(token.address));
+  bal = await token.balanceOf(token.address);
   assert(bal.isZero());
 
   const lastOwnerBalance = await token.balanceOf(owner);
   assert(firstOwnerBalance.toString() == lastOwnerBalance.toString());
+
+});
+
+
+test("Only owner can recover tokens", async () => {
+
+  const amount = web3.utils.toWei(new BN("1"), "ether");
+
+  await token.transfer(user2, amount, { from: owner });
+
+  // Accidentally sending tokens to the smart contract
+  await token.transfer(token.address, amount, { from: user2 });
+
+  // We know how many tokens we can recover
+  const recoverable = await token.tokensToBeReturned(token.address);
+
+  assert.rejects(async () => {
+    // Double s instead of r s
+    await token.recoverTokens(token.address, { from: user2 });
+  }, {
+    message: 'Returned error: VM Exception while processing transaction: revert Ownable: caller is not the owner -- Reason given: Ownable: caller is not the owner.'
+  });
 
 });

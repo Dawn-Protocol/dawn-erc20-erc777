@@ -67,7 +67,15 @@ npm run test
 Example:
 
 ```sh
-npm test -- -t 'Proxy should have an admin right'
+npx jest -t 'Proxy should have an admin right'
+```
+
+## Running a single test module
+
+Example:
+
+```sh
+npx jest -t 'Proxy should have an admin right'
 ```
 
 ## Debugging tests in Visual Studio Code

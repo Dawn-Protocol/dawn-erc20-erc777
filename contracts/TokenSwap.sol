@@ -67,7 +67,9 @@ contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
   function _swap(address whom, uint amount) internal {
     // Move old tokens to this contract
     address swapper = address(this);
-    require(newToken.balanceOf(msg.sender) >= amount, "You do not have enough tokens to swap");
+    // We have added some user friendly error messages here if they
+    // somehow manage to screw interaction
+    require(oldToken.balanceOf(msg.sender) >= amount, "You do not have enough tokens to swap");
     require(oldToken.transferFrom(whom, swapper, amount) == true, "Could not retrieve old tokens");
     require(newToken.transferFrom(owner(), whom, amount) == true, "Could not send new tokens");
     totalSwapped += amount;
@@ -87,44 +89,13 @@ contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
       // https://ethereum.stackexchange.com/a/41356/620
       bytes memory packed = abi.encodePacked(sender);
       bytes32 hashResult = keccak256(packed);
-      require(ecrecover(hashResult, v, r, s) != signerAddress, "Address was not properly signed by whitelisting server");
-  }
-
- /**
-   * A test method exposed to be called from clients to compare that ABI packing and hashing
-   * is same across different programming languages.
-   *
-   * Does ABI encoding for an address and then calculates KECCAK-256 hash over the bytes.
-   *
-   * https://web3js.readthedocs.io/en/v1.2.0/web3-utils.html#soliditysha3
-   *
-   */
-  function calculateAddressHash(address a) public pure returns (bytes32 hash, bytes memory data) {
-
-    // First we ABI encode the address to bytes.
-    // This is so called "tight packing"
-    // https://web3js.readthedocs.io/en/v1.2.0/web3-utils.html#soliditysha3
-    bytes memory packed = abi.encodePacked(a);
-
-    // Then we calculate keccak256 over the resulting bytes
-    bytes32 hashResult = keccak256(packed);
-
-    return(hashResult, packed);
-  }
-
-  /**
-   * Expose ecrecover, so we can call it from console/tests and compare results.
-   *
-   *
-   */
-  function recoverAddress(bytes32 hash, uint8 v, bytes32 r, bytes32 s) public pure returns(address) {
-    return ecrecover(hash, v, r, s);
+      require(ecrecover(hashResult, v, r, s) == signerAddress, "Address was not properly signed by whitelisting server");
   }
 
   function swapTokensForSender(uint amount, uint8 v, bytes32 r, bytes32 s) public whenNotPaused {
     _checkSenderSignature(msg.sender, v, r, s);
     address swapper = address(this);
-    require(oldToken.allowance(msg.sender, swapper) > amount, "You need to first approve() enough tokens to swap for this contract");
+    require(oldToken.allowance(msg.sender, swapper) >= amount, "You need to first approve() enough tokens to swap for this contract");
     require(oldToken.balanceOf(msg.sender) >= amount, "You do not have enough tokens to swap");
     _swap(msg.sender, amount);
   }
@@ -154,5 +125,34 @@ contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
 
   function setSignerAddress(address _signerAddress) public onlyOwner {
     signerAddress = _signerAddress;
+  }
+
+  /**
+   * A test method exposed to be called from clients to compare that ABI packing and hashing
+   * is same across different programming languages.
+   *
+   * Does ABI encoding for an address and then calculates KECCAK-256 hash over the bytes.
+   *
+   * https://web3js.readthedocs.io/en/v1.2.0/web3-utils.html#soliditysha3
+   *
+   */
+  function calculateAddressHash(address a) public pure returns (bytes32 hash, bytes memory data) {
+
+    // First we ABI encode the address to bytes.
+    // This is so called "tight packing"
+    // https://web3js.readthedocs.io/en/v1.2.0/web3-utils.html#soliditysha3
+    bytes memory packed = abi.encodePacked(a);
+
+    // Then we calculate keccak256 over the resulting bytes
+    bytes32 hashResult = keccak256(packed);
+
+    return(hashResult, packed);
+  }
+
+  /**
+   * Expose ecrecover, so we can call it from console/tests and compare results.
+   */
+  function recoverAddress(bytes32 hash, uint8 v, bytes32 r, bytes32 s) public pure returns(address) {
+    return ecrecover(hash, v, r, s);
   }
 }

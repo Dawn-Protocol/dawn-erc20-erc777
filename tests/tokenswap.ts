@@ -11,7 +11,7 @@ import { Account }  from 'eth-lib/lib'; // https://github.com/MaiaVictor/eth-lib
 import { sha3, soliditySha3 } from 'web3-utils';
 
 import {
-  BN,           // Big Number support
+  BN,           // Big Number support https://github.com/indutny/bn.js
   constants,    // Common constants, like the zero address and largest integers
 } from '@openzeppelin/test-helpers';
 
@@ -20,7 +20,8 @@ const [
   deployer,  // Deploys the smart contract
   owner, // Token owner - an imaginary multisig wallet
   proxyOwner, // Who owns the proxy contract - an imaginary multisig wallet
-  user2 // Random dude who wants play with tokens
+  user2, // Random dude who wants play with tokens
+  thirdTokenOwner // Needed to test interaction with third party tokens
 ] = accounts;
 
 // Signer is the server-side private key that whitelists transactions.
@@ -151,18 +152,18 @@ test('TypeScript and Solidity are consistent in cryptography', async () => {
   const recoveredAddress = await tokenSwap.recoverAddress(ourHash, v, r, s);
   assert(recoveredAddress == signer);
 
-  // Account.recover() and Solidity ecrecover() agree
-  const recoveredAddress2 = await tokenSwap.recoverAddress(hash, v, r, s);
-  assert(recoveredAddress2 == signer);
-
 });
 
-test('Swap tokens', async () => {
+test('Swap all tokens', async () => {
+
+  // Check that we are set up for the swap
+  const tokensLeftToSwap = await tokenSwap.getTokensLeftToSwap();
+  assert(tokensLeftToSwap.toString() == SWAP_BUDGET.toString());
 
   // Giver user2 tokens
   const amount = new BN('100');
-  oldToken.transfer(user2, amount, { from: owner });
-  const tokensLeftToSwap = await tokenSwap.getTokensLeftToSwap();
+  await oldToken.transfer(user2, amount, { from: owner });
+  assert((await oldToken.balanceOf(user2)).eq(amount));
 
   // User approves token for the swap
   await oldToken.approve(tokenSwap.address, amount, { from: user2 });
@@ -175,9 +176,123 @@ test('Swap tokens', async () => {
   await tokenSwap.swapTokensForSender(amount, v, r, s, { from: user2 });
 
   // See everything went well
-  assert(await oldToken.balanceOf(user2) == 0);
-  assert(await newToken.balanceOf(user2) == amount.toString())
-  assert(await tokenSwap.getTokensLeftToSwap() == tokensLeftToSwap.minus(amount));
+  assert((await oldToken.balanceOf(user2)).isZero());
+  assert((await newToken.balanceOf(user2)).toString() == amount.toString())
+
+  // New token amount on the token swap smart contract decreased
+  assert((await tokenSwap.getTokensLeftToSwap()).eq(tokensLeftToSwap.sub(amount)));
+
+});
+
+
+test('Swap part of tokens tokens', async () => {
+
+  // Check that we are set up for the swap
+  const tokensLeftToSwap = await tokenSwap.getTokensLeftToSwap();
+  assert(tokensLeftToSwap.toString() == SWAP_BUDGET.toString());
+
+  // Giver user2 tokens
+  const amount = new BN('100');
+  const amountToSwap = new BN('30');
+  await oldToken.transfer(user2, amount, { from: owner });
+
+  // User approves token for the swap
+  await oldToken.approve(tokenSwap.address, amount, { from: user2 });
+
+  // Get server-side whitelist
+  const { signature, v, r, s } = signAddress(user2);
+
+  await tokenSwap.swapTokensForSender(amountToSwap, v, r, s, { from: user2 });
+
+  // See everything went well
+  assert((await oldToken.balanceOf(user2)).isZero() == false);
+  assert((await newToken.balanceOf(user2)).toString() == amountToSwap.toString())
+
+  // New token amount on the token swap smart contract decreased
+  assert((await tokenSwap.getTokensLeftToSwap()).eq(tokensLeftToSwap.sub(amountToSwap)));
+
+});
+
+
+test('Cannot swap with a bad signature', async () => {
+
+  // Giver user2 tokens
+  const amount = new BN('100');
+  await oldToken.transfer(user2, amount, { from: owner });
+
+  // User approves token for the swap
+  await oldToken.approve(tokenSwap.address, amount, { from: user2 });
+
+  // Get server-side whitelist
+  const { signature, v, r, s } = signAddress(user2);
+
+  assert.rejects(async () => {
+    // Double s instead of r s
+    await tokenSwap.swapTokensForSender(amount, v, s, s, { from: user2 });
+  });
+
+});
+
+
+test('Tokens can be send to burn', async () => {
+
+  // Giver user2 tokens
+  const amount = new BN('100');
+  await oldToken.transfer(user2, amount, { from: owner });
+
+  // User approves token for the swap
+  await oldToken.approve(tokenSwap.address, amount, { from: user2 });
+
+  // Get server-side whitelist
+  const { signature, v, r, s } = signAddress(user2);
+
+  await tokenSwap.swapTokensForSender(amount, v, r, s, { from: user2 });
+
+  // New token amount on the token swap smart contract decreased
+  assert((await tokenSwap.getCurrentlySwappedSupply()).eq(amount));
+
+  // Send to 0x0
+  await tokenSwap.burn(amount, { from: owner });
+
+  // New token amount on the token swap smart contract decreased
+  assert((await tokenSwap.getCurrentlySwappedSupply()).isZero());
+
+  // We have sent tokens to 0x0 to die
+  const zeroAddressBalance = await oldToken.balanceOf(constants.ZERO_ADDRESS);
+  console.log(zeroAddressBalance);
+  assert(zeroAddressBalance.eq(amount));
+
+});
+
+
+test('We can recover wrong tokens send to the contract', async () => {
+
+  // Create an independent tthird token,
+  // albeit recovery works with legacy and new tokens as well
+  const thirdToken = await DawnTokenImpl.new(thirdTokenOwner, { from: deployer });
+  await thirdToken.initialize(deployer, thirdTokenOwner);
+
+  const amount = new BN("100");
+
+  await thirdToken.transfer(user2, amount, { from: thirdTokenOwner });
+
+  // Accidentally sending tokens to the smart contract
+  await thirdToken.transfer(tokenSwap.address, amount, { from: user2 });
+
+  let bal = await thirdToken.balanceOf(tokenSwap.address);
+  assert(bal.gt(0));
+
+  // We know how many tokens we can recover
+  const recoverable = await tokenSwap.tokensToBeReturned(thirdToken.address);
+  assert(recoverable.toString() == amount.toString(0));
+
+  await tokenSwap.recoverTokens(thirdToken.address, { from: owner });
+
+  bal = await thirdToken.balanceOf(tokenSwap.address);
+  assert(bal.isZero());
+
+  const ownerBal = await thirdToken.balanceOf(owner);
+  assert(ownerBal.toString() == amount.toString());
 
 });
 
