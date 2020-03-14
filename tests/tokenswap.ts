@@ -139,6 +139,7 @@ test('TypeScript and Solidity are consistent in cryptography', async () => {
   const { signature, v, r, s } = signAddress(user2);
 
   const ourData = user2;
+  console.log(ourData);
   const ourHash = keccak256(ourData);
 
   // Account.recover() and Solidity ecrecover() agree
