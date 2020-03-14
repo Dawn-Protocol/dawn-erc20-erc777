@@ -1,12 +1,14 @@
 /**
- * Test ERC-20 pausable core functionality
+ * Test the token swap smart contract.
  */
 
 import assert = require('assert');
 
-import { accounts, contract } from '@openzeppelin/test-environment';
+import { accounts, contract, web3 } from '@openzeppelin/test-environment';
 import { Proxy } from '@openzeppelin/upgrades';
 import { ZWeb3 } from '@openzeppelin/upgrades';
+import { Account }  from 'eth-lib/lib'; // https://github.com/MaiaVictor/eth-lib/blob/master/src/account.js
+import { sha3, keccak256 } from 'web3-utils';
 
 import {
   BN,           // Big Number support
@@ -18,10 +20,16 @@ const [
   deployer,  // Deploys the smart contract
   owner, // Token owner - an imaginary multisig wallet
   proxyOwner, // Who owns the proxy contract - an imaginary multisig wallet
-  signer, // Server side signing key used to whitelist addresses
   user2 // Random dude who wants play with tokens
 ] = accounts;
 
+// Signer is the server-side private key that whitelists transactions.
+// For this account, we need to also have our private key
+let signerPrivateKey = sha3("You should really play MindSeize https://www.youtube.com/watch?v=BfCldtdjYzI");
+let signerAccount = Account.fromPrivate(signerPrivateKey);
+let signer = signerAccount.address;
+
+// Where we send tokens to die
 const BURN_ADDRESS = constants.ZERO_ADDRESS;
 
 // We can swap total 900 tokens
@@ -42,8 +50,8 @@ let tokenSwap = null;  // TokenSwap
 
 
 beforeEach(async () => {
-  // Here we refer the token contract directly without going through the proxy
 
+  // Here we refer the token contract directly without going through the proxy
   newTokenImpl = await DawnTokenImpl.new(owner, { from: deployer });
 
   // Proxy contract will
@@ -107,4 +115,54 @@ test('Cannot initialize twice', async () => {
   });
 
 });
+
+
+test('Swap tokens', async () => {
+
+  // Giver user2 tokens
+  const amount = new BN('100');
+  oldToken.transfer(user2, amount, { from: owner });
+  const tokensLeftToSwap = await tokenSwap.getTokensLeftToSwap();
+
+  // User approves token for the swap
+  await oldToken.approve(tokenSwap.address, amount, { from: user2 });
+
+  // Get server-side whitelist
+  const { v, r, s } = signAddress(user2);
+
+  // Do the swap transaction
+  await tokenSwap.swapTokensForSender(amount, v, r, s, { from: user2 });
+
+  // See everything went well
+  assert(await oldToken.balanceOf(user2) == 0);
+  assert(await newToken.balanceOf(user2) == amount.toString())
+  assert(await tokenSwap.getTokensLeftToSwap() == tokensLeftToSwap.minus(amount));
+
+});
+
+
+/**
+ * Sign an address on the server side.
+ */
+function signAddress(address: string): {v: string, r: string, s: string} {
+
+  assert(address.substring(0, 2) == "0x");
+
+  const data = address;
+  const hash = keccak256(data);
+
+  assert(hash.substring(0, 2) == "0x");
+
+  // Account.sign() expects input has hex strings
+  // const signature =
+  const signature = Account.sign(hash, signerPrivateKey);
+  const components = Account.decodeSignature(signature);
+
+  return {
+    v: components[0], // 0x1b
+    r: components[1], // like: 0x9ece92b5378ac0bfc951b800a7a620edb8618f99d78237436a58e32ba6b0aedc
+    s: components[2]  // like: 0x386945ff75168e7bd586ad271c985edff54625bdc36be9d88a65432314542a84
+  }
+}
+
 

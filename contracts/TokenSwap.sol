@@ -73,7 +73,26 @@ contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
     totalSwapped += amount;
   }
 
-  function swapAllTokensForSender(uint amount) public whenNotPaused {
+  /**
+   * Check that the server-side signature matches.
+   *
+   * Note that this check does NOT use Ethereum message signing preamble:
+   * https://ethereum.stackexchange.com/a/43984/620
+   *
+   * Thus, youi cannot get v, r, s with user facing wallets, you need
+   * to work for those using lower level tools.
+   *
+   */
+  function _checkSenderSignature(address sender, uint8 v, bytes32 r, bytes32 s) internal view {
+
+      // https://ethereum.stackexchange.com/a/62055/620
+      bytes32 hash = keccak256(abi.encodePacked(sender));
+
+      require(ecrecover(hash, v, r, s) != signerAddress, "Address was not properly signed by whitelisting server");
+  }
+
+  function swapTokensForSender(uint amount, uint8 v, bytes32 r, bytes32 s) public whenNotPaused {
+    _checkSenderSignature(msg.sender, v, r, s);
     address swapper = address(this);
     require(oldToken.allowance(msg.sender, swapper) > amount, "You need to first approve() enough tokens to swap for this contract");
     require(oldToken.balanceOf(msg.sender) >= amount, "You do not have enough tokens to swap");
