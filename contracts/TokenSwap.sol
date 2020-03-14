@@ -84,11 +84,25 @@ contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
    *
    */
   function _checkSenderSignature(address sender, uint8 v, bytes32 r, bytes32 s) internal view {
-
-      // https://ethereum.stackexchange.com/a/62055/620
-      bytes32 hash = keccak256(abi.encodePacked(sender));
-
+      // https://ethereum.stackexchange.com/a/41356/620
+      bytes data = _toBytes(sender);
+      bytes32 hash = keccak256(data);
       require(ecrecover(hash, v, r, s) != signerAddress, "Address was not properly signed by whitelisting server");
+  }
+
+  function _toBytes(address a) internal pure returns (bytes memory b) {
+    assembly {
+      let m := mload(0x40)
+      a := and(a, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+      mstore(add(m, 20), xor(0x140000000000000000000000000000000000000000, a))
+      mstore(0x40, add(m, 52))
+      b := m
+    }
+  }
+
+  // Expose this, so we can call it from console/tests for diagnostics
+  function recoverAddress(bytes32 hash, uint8 v, bytes32 r, bytes32 s) public pure returns(address) {
+    return ecrecover(hash, v, r, s);
   }
 
   function swapTokensForSender(uint amount, uint8 v, bytes32 r, bytes32 s) public whenNotPaused {

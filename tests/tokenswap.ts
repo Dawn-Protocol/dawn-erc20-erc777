@@ -117,6 +117,35 @@ test('Cannot initialize twice', async () => {
 });
 
 
+// Check that TypeScript implementation itself can sign and recover addresses correctly
+test('TypeScript is self-consistent in cryptography', async () => {
+
+  // Sign address
+  const { signature, v, r, s } = signAddress(user2);
+
+  const data = user2;
+  const hash = keccak256(data);
+
+  const recoveredAddress = Account.recover(hash, signature);
+  assert(recoveredAddress == signer);
+
+});
+
+
+// Check that TypeScript implementation and Solidity agree how to recover an address
+test('TypeScript and Solidity are consistent in cryptography', async () => {
+
+  // Sign address
+  const { signature, v, r, s } = signAddress(user2);
+
+  const data = user2;
+  const hash = keccak256(data);
+
+  const recoveredAddress = await tokenSwap.recoverAddress(hash, v, r, s);
+  assert(recoveredAddress == signer);
+
+});
+
 test('Swap tokens', async () => {
 
   // Giver user2 tokens
@@ -128,7 +157,7 @@ test('Swap tokens', async () => {
   await oldToken.approve(tokenSwap.address, amount, { from: user2 });
 
   // Get server-side whitelist
-  const { v, r, s } = signAddress(user2);
+  const { signature, v, r, s } = signAddress(user2);
 
   // Do the swap transaction
   await tokenSwap.swapTokensForSender(amount, v, r, s, { from: user2 });
@@ -144,11 +173,14 @@ test('Swap tokens', async () => {
 /**
  * Sign an address on the server side.
  */
-function signAddress(address: string): {v: string, r: string, s: string} {
+function signAddress(address: string): { signature: string, v: string, r: string, s: string } {
 
   assert(address.substring(0, 2) == "0x");
 
+  // Address is 160 bits of data - or 20 bytes
   const data = address;
+
+  // Hash is bytes32
   const hash = keccak256(data);
 
   assert(hash.substring(0, 2) == "0x");
@@ -159,6 +191,7 @@ function signAddress(address: string): {v: string, r: string, s: string} {
   const components = Account.decodeSignature(signature);
 
   return {
+    signature, // Full signature
     v: components[0], // 0x1b
     r: components[1], // like: 0x9ece92b5378ac0bfc951b800a7a620edb8618f99d78237436a58e32ba6b0aedc
     s: components[2]  // like: 0x386945ff75168e7bd586ad271c985edff54625bdc36be9d88a65432314542a84
