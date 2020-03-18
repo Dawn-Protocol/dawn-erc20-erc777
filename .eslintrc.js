@@ -24,6 +24,8 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off', // In deployment scripts we do not bother with return type
     '@typescript-eslint/require-await': 'off',  // assert.rejects pattern in tests
     '@typescript-eslint/no-var-requires': 'off',  // web3 JS dependencies and default exports
+    'no-restricted-syntax': 'off', // for...of loops enabled
+    'no-await-in-loop': 'off', // Readability
     'max-len': ["error", {
       code: 140,
       ignoreComments: true,

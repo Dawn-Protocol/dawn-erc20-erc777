@@ -12,7 +12,7 @@ import { ZWeb3, Contracts } from '@openzeppelin/upgrades';
 import * as envalid from 'envalid';
 import { Account } from 'eth-lib/lib'; // https://github.com/MaiaVictor/eth-lib/blob/master/src/account.js
 
-import { prepareDeploymentAccount, createProvider, deployContract } from '../utils/deploy';
+import { checkDeploymentAccounts, createProvider, deployContract } from '../utils/deploy';
 
 // We need all of these secrets from our
 // secrets/goerli.env.ini config file
@@ -37,8 +37,8 @@ const envOptions = {
 
 const BURN_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-// How many tokens we approve for the swap
-const SWAP_BUDGET = '5000_000_000_000_000_000_000';
+// How many tokens we approve for the swap 5000_000_000_000_000_000_000
+const SWAP_BUDGET = '5000000000000000000000';
 
 // We run async function because top level await is not supported yet
 async function deploy(): Promise<void> {
@@ -47,11 +47,17 @@ async function deploy(): Promise<void> {
   } = envalid.cleanEnv(process.env, inputs, envOptions);
 
   // Get a websocket that connects us to Infura Ethereum node
-  const provider = createProvider([deployerPrivateKeyHex, tokenOwnerPrivateKeyHex], infuraProjectId);
+  const deploymentKeys = [deployerPrivateKeyHex, tokenOwnerPrivateKeyHex];
+  const provider = createProvider(deploymentKeys, infuraProjectId);
 
   // OpenZeppelin framework likes it globals
   // // https://github.com/OpenZeppelin/openzeppelin-sdk/blob/62ffef55559e0076ef6066ccf2861fd31de6a3aa/packages/lib/src/artifacts/ZWeb3.ts
   ZWeb3.initialize(provider);
+
+  console.log('Connected to', await ZWeb3.getNetworkName(), 'network');
+
+  // Check we have money on accounts we need
+  await checkDeploymentAccounts(deploymentKeys);
 
   // Loads a compiled contract using OpenZeppelin test-environment
   const DawnTokenImpl = Contracts.getFromLocal('DawnTokenImpl');
@@ -61,7 +67,7 @@ async function deploy(): Promise<void> {
   // const DawnTokenProxy = Contracts.getFromLocal('DawnTokenProxy'); // AdminUpgradeabilityProxy subclass
 
   // Deployer account serves all owner functions
-  const deployer = await prepareDeploymentAccount(deployerPrivateKeyHex);
+  const deployer = Account.fromPrivate(`0x${deployerPrivateKeyHex}`).address;
   const signerAccount = Account.fromPrivate(`0x${signerPrivateKeyHex}`);
   const tokenOwnerAccount = Account.fromPrivate(`0x${tokenOwnerPrivateKeyHex}`);
 
@@ -91,13 +97,13 @@ async function deploy(): Promise<void> {
 
   const newToken = newTokenImpl;
 
-  const oldToken = await deployContract('oldToken', FirstBloodTokenMock, [tokenOwnerAccount.address, 'Mock of old token', 'OLD'], { from: deployer });
+  const oldToken = await deployContract('oldToken', FirstBloodTokenMock, [tokenOwnerAccount.address, 'Mock of old token', 'OLD'], { from: deployer, gas: 3_000_000 });
 
   // This one is big so go with a lot of gas
   const tokenSwap = await deployContract('tokenSwap', TokenSwap, [], { from: deployer, gas: 3_000_000 });
 
-  // Faucet gives 3 tokens at a time
-  const faucetAmount = '3_000_000_000_000_000_000';
+  // Faucet gives 3 tokens at a time 3_000_000_000_000_000_000
+  const faucetAmount = '3000000000000000000';
   const faucet = await deployContract('faucet', TokenFaucet, [oldToken.address, faucetAmount], { from: deployer });
 
   console.log('Initializing token swap');
@@ -112,10 +118,10 @@ async function deploy(): Promise<void> {
   await tokenSwap.methods.initializeTokenSwap(...args).send({ from: deployer });
 
   console.log('Approving new tokens for swapping');
-  newToken.methods.approve(tokenSwap.address, SWAP_BUDGET.toString()).send({ from: tokenOwnerAccount.address });
+  await newToken.methods.approve(tokenSwap.address, SWAP_BUDGET.toString()).send({ from: tokenOwnerAccount.address });
 
   console.log('Make some OLD test tokens available on the faucet');
-  oldToken.methods.transfer(faucet.address, SWAP_BUDGET.toString()).send({ from: tokenOwnerAccount.address });
+  await oldToken.methods.transfer(faucet.address, SWAP_BUDGET.toString()).send({ from: tokenOwnerAccount.address });
 
   // Write report to the console
 
@@ -123,17 +129,17 @@ async function deploy(): Promise<void> {
 
   const legacyTokenInfo = {
     address: oldToken.address,
-    name: await oldToken.methods.name.call(),
-    symbol: await oldToken.methods.symbol.call(),
-    supply: await oldToken.methods.totalSupply.call(),
+    name: await oldToken.methods.name().call(),
+    symbol: await oldToken.methods.symbol().call(),
+    supply: await oldToken.methods.totalSupply().call(),
   };
   console.log('Legacy token', legacyTokenInfo);
 
   const newTokenInfo = {
     address: newToken.address,
-    name: await newToken.methods.name.call(),
-    symbol: await newToken.methods.symbol.call(),
-    supply: await newToken.methods.totalSupply.call(),
+    name: await newToken.methods.name().call(),
+    symbol: await newToken.methods.symbol().call(),
+    supply: await newToken.methods.totalSupply().call(),
   };
   console.log('New token', newTokenInfo);
 

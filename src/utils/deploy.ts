@@ -21,27 +21,27 @@ import assert = require('assert');
   *
   * @param privateKeyHex raw private key
   */
-export async function prepareDeploymentAccount(privateKeyHex: string): Promise<string> {
-  console.log('Connected to network', await ZWeb3.getNetworkName());
-
+export async function checkDeploymentAccounts(privateKeys: string[]): Promise<void> {
   const { web3 } = ZWeb3;
 
-  //  When using web3.eth.accounts.privateKeyToAccount
-  // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-accounts.html#privatekeytoaccount
-  const account = web3.eth.accounts.privateKeyToAccount(`0x${privateKeyHex}`);
+  for (const privateKeyHex of privateKeys) {
+    //  When using web3.eth.accounts.privateKeyToAccount
+    // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-accounts.html#privatekeytoaccount
+    const account = web3.eth.accounts.privateKeyToAccount(`0x${privateKeyHex}`);
 
-  // Check we have gas money for the deployment
-  const weiBalance = await web3.eth.getBalance(account.address);
-  const ethBalance = web3.utils.fromWei(weiBalance, 'ether');
+    // Check we have gas money for the deployment
+    const weiBalance = await web3.eth.getBalance(account.address);
+    const ethBalance = web3.utils.fromWei(weiBalance, 'ether');
 
-  const balance = web3.utils.toBN(weiBalance);
+    const balance = web3.utils.toBN(weiBalance);
 
-  // Big number dies on decimals, so feed it only integers
-  assert(!balance.isZero(), `Deployment account ${account.address} has no ETH. If this is a testnet account check https://goerli-faucet.slock.it/ to get some testnet ETH.`);
+    // Big number dies on decimals, so feed it only integers
+    if (balance.isZero()) {
+      throw new Error(`Deployment account ${account.address} has no ETH. If this is a testnet account check https://goerli-faucet.slock.it/ to get some testnet ETH.`);
+    }
 
-  console.log(`Deployment account ${account.address} balance:`, ethBalance, 'ETH');
-
-  return account.address;
+    console.log(`Deployment account ${account.address} balance:`, ethBalance, 'ETH');
+  }
 }
 
 /**

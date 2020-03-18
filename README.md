@@ -208,16 +208,34 @@ npx ts-node src/scripts/deployGoerli.ts
 ```sh
 npx ts-node src/scripts/deployGoerli.ts
 ```
-
 # Goerli deployment
 
 Here is a sample deployment in Goerli testnet
 
-- Old token:
-- New token:
-- Token swap:
-- Token faucet
-
+```
+Legacy token {
+  address: '0x5bad7e8039C11840fDad4a3e34e1Aa0Fc43D1De4',
+  name: 'Mock of old token',
+  symbol: 'OLD',
+  supply: '93468683899196345527500000'
+}
+New token {
+  address: '0x886263505cabBE7312aA3DAEE3d92Fa7D3d0779a',
+  name: 'Mock of new token',
+  symbol: 'NEW',
+  supply: '93468683899196345527500000'
+}
+Token swap {
+  address: '0xb41b52f8cac2DB0841528fefa299aDb86CB83312',
+  tokensLeftToSwap: '5000000000000000000000',
+  signerKey: '39cc67e7dbf2c162095bfc058f4b7ba2f9aa7ec006f9e28dc438c07662a3bb41'
+}
+Faucet {
+  address: '0x57853504653e2250fc43AF90C3a5A75CfbF3F133',
+  faucetAmount: '3000000000000000000',
+  balance: '5000000000000000000000'
+}
+```
 # Production deployment strategy
 
 Two different multi-signature wallets are needed.
