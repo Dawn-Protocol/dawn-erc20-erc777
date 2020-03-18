@@ -153,7 +153,7 @@ async function deploy(): Promise<void> {
 }
 
 // Top level async is not supported yet, so we need to wrap this in a function
-async function run(): void {
+async function run(): Promise<void> {
   try {
     await deploy();
   } catch (e) {

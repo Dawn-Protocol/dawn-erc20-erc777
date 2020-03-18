@@ -7,10 +7,11 @@ import { ZWeb3 } from '@openzeppelin/upgrades';
 // Need JS style import
 // https://github.com/ethereum/web3.js/tree/1.x/packages/web3-providers-ws
 // https://github.com/ethereum/web3.js/blob/1.x/packages/web3-providers-ws/src/index.js
-import * as Web3WsProvider from 'web3-providers-ws';
+const Web3WsProvider = require('web3-providers-ws');
 
+// Needs JS tyle import
 // https://github.com/trufflesuite/truffle/blob/develop/packages/hdwallet-provider/src/index.ts
-import * as HDWalletProvider from '@truffle/hdwallet-provider';
+const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 import assert = require('assert');
 
