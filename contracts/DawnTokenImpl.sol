@@ -22,13 +22,13 @@ contract DawnTokenImpl is Recoverable, ERC20Pausable {
   // Same as in 1ST token
   uint constant INITIAL_SUPPLY = 93468683899196345527500000;
 
-  function initialize(address sender, address manager) public initializer  {
+  function initialize(address sender, address manager, string memory _name, string memory _symbol) public initializer  {
 
     ERC20Pausable.initialize(sender);
     Ownable.initialize(sender);
 
-    name = "Dawn";
-    symbol = "DAWN";
+    name = _name;
+    symbol = _symbol;
     decimals = 18;
 
     _mint(manager, INITIAL_SUPPLY);

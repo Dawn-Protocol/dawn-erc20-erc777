@@ -145,14 +145,16 @@ contract StandardToken is Token {
  */
 contract FirstBloodTokenMock is StandardToken, SafeMath {
 
-    string public name = "FirstBlood Token";
-    string public symbol = "1ST";
     uint public decimals = 18;
+    string public name;
+    string public symbol;
 
-    constructor(address owner) public {
+    constructor(address owner, string memory _name, string memory _symbol) public {
       // https://etherscan.io/address/0xaf30d2a7e90d7dc361c8c4585e9bb7d2f6f15bc7#readContract
       balances[owner] = 93468683899196345527500000;
       totalSupply = 93468683899196345527500000;
+      name = _name;
+      symbol = _symbol;
     }
 
 }

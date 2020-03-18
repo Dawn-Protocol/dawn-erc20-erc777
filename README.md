@@ -174,28 +174,49 @@ npx eslint --ext .ts tests/
 
 ## Goerli testnet
 
-Store your private key for the deployment account in `secrets/goerli-deployer-private-key.txt` file
+This will deploy a mock of old token, a mock of new token, a token swap and
+a testnet token faucet contracts.
 
-1. Generate a new key
-
-```sh
-openssl rand -hex 32 | tee secrets/goerli-deployer-private-key.txt
-```
-2. Get the address for the private key
+1. Generate two new private keys, one for the deployment account and one for the server-side signer
 
 ```sh
-npx ts-node src/utils/privateKeyToAddress.ts < secrets/goerli-deployer-private-key.txt
+openssl rand -hex 32
 ```
 
-3. [Visit faucet to get testnet eth](https://goerli-faucet.slock.it/)
+2. [Create account on Infura and get API key for goearly]().
 
-4. [Create account on Infura and get API key for goearly](). Save it in `'secrets/goerli-infura-api-key.txt`.
+3. Create a config file `secrets/goearly.env.ini`
 
-This will create 2 token contracts, token test faucet and swap contract.
+```ini
+privateKeyHex = "..."
+
+signerKeyHex = "..."
+
+infuraProjectId = "..."
+```
+
+4. Get the address for the deployment account by running the deployer without ETH
 
 ```sh
 npx ts-node src/scripts/deployGoerli.ts
 ```
+
+5. [Visit faucet to get testnet eth on the deployment account](https://goerli-faucet.slock.it/)
+
+6. Deploy now with having some gas money
+
+```sh
+npx ts-node src/scripts/deployGoerli.ts
+```
+
+# Goerli deployment
+
+Here is a sample deployment in Goerli testnet
+
+- Old token:
+- New token:
+- Token swap:
+- Token faucet
 
 # Production deployment strategy
 

@@ -35,7 +35,7 @@ beforeEach(async () => {
 
   // This is the first implementation contract - v1 for the smart contarct code.
   // Here we refer the token contract directly without going through the proxy.
-  tokenImpl = await DawnTokenImpl.new(owner, { from: deployer });
+  tokenImpl = await DawnTokenImpl.new({ from: deployer });
 
   // Proxy contract will
   // 1. Store all data, current implementation and future implementations
@@ -59,13 +59,8 @@ beforeEach(async () => {
   // Route all token calls to go through the proxy contract
   token = await DawnTokenImpl.at(proxyContract.address);
 
-  // We need this special Proxy helper class,
-  // because Proxy smart contract is very special and we can't
-  // e.g. refer to Proxy.admin() directly
-  proxy = new Proxy(proxyContract.address);
-
   // This is the constructor in OpenZeppelin upgradeable pattern
-  await token.initialize(deployer, owner);
+  await token.initialize(deployer, owner, 'New Token', 'NEW');
 });
 
 test('Token contract is not payable', async () => {

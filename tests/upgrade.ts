@@ -42,7 +42,7 @@ let proxyContract = null; // DawnTokenProxy depoyment, AdminUpgradeabilityProxy
  * @param user1 Ethereum account
  * @param user2 Ethereum account
  */
-async function doSomeActivity(): Promise<T> {
+async function doSomeActivity(): Promise<void> {
   await token.transfer(user1, new BN('100'), { from: owner });
   await token.transfer(user2, new BN('50'), { from: owner });
   await token.approve(allowedUser, new BN('20'), { from: user2 });
@@ -56,7 +56,7 @@ beforeEach(async () => {
 
   // This is the first implementation contract - v1 for the smart contarct code.
   // Here we refer the token contract directly without going through the proxy.
-  tokenImpl = await DawnTokenImpl.new(owner, { from: deployer });
+  tokenImpl = await DawnTokenImpl.new({ from: deployer });
 
   // Proxy contract will
   // 1. Store all data, current implementation and future implementations
@@ -76,7 +76,7 @@ beforeEach(async () => {
   token = await DawnTokenImpl.at(proxyContract.address);
 
   // This is the constructor in OpenZeppelin upgradeable pattern
-  await token.initialize(deployer, owner);
+  await token.initialize(deployer, owner, 'New Token', 'NEW');
 
   // Make sure we have legacy data written in the contract memor
   await doSomeActivity();

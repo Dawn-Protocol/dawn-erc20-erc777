@@ -71,7 +71,7 @@ function signAddress(address: string): { signature: string; v: string; r: string
 
 beforeEach(async () => {
   // Here we refer the token contract directly without going through the proxy
-  newTokenImpl = await DawnTokenImpl.new(owner, { from: deployer });
+  newTokenImpl = await DawnTokenImpl.new({ from: deployer });
 
   // Proxy contract will
   // 1. Store all data, current implementation and future implementations
@@ -88,9 +88,9 @@ beforeEach(async () => {
   // This is the constructor in OpenZeppelin upgradeable pattern
   // Route all token calls to go through the proxy contract
   newToken = await DawnTokenImpl.at(proxyContract.address);
-  await newToken.initialize(deployer, owner);
+  await newToken.initialize(deployer, owner, 'New Token', 'NEW');
 
-  oldToken = await FirstBloodTokenMock.new(owner, { from: deployer });
+  oldToken = await FirstBloodTokenMock.new(owner, 'Old Token', 'OLD', { from: deployer });
   tokenSwap = await TokenSwap.new({ from: deployer });
 
   // Use the Initializer pattern to bootstrap the contract
@@ -292,7 +292,7 @@ test('We can recover wrong tokens send to the contract', async () => {
   const thirdToken = await DawnTokenImpl.new(thirdTokenOwner, {
     from: deployer,
   });
-  await thirdToken.initialize(deployer, thirdTokenOwner);
+  await thirdToken.initialize(deployer, thirdTokenOwner, 'Third Token', '3RD');
 
   const amount = new BN('100');
 

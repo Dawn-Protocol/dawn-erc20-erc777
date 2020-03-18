@@ -27,10 +27,10 @@ let token = null; // ERC20Pausable
 beforeEach(async () => {
   // Here we refer the token contract directly without going through the proxy
 
-  token = await DawnTokenImpl.new(owner, { from: deployer });
+  token = await DawnTokenImpl.new({ from: deployer });
 
   // Use upgrade initialiser pattern to set up initial value
-  await token.initialize(deployer, owner);
+  await token.initialize(deployer, owner, 'New Token', 'NEW');
 });
 
 afterEach(() => {
