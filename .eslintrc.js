@@ -13,12 +13,6 @@ module.exports = {
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "airbnb-typescript",
-    // "airbnb/hooks", React hooks specific
-    //'plugin:@typescript-eslint/eslint-recommended',
-    //'plugin:@typescript-eslint/recommended',
-    //'prettier',
-    //'prettier/@typescript-eslint',
-
   ],
   root: true,
   env: {
@@ -26,15 +20,15 @@ module.exports = {
     jest: true,
   },
   rules: {
-    //'@typescript-eslint/interface-name-prefix': 'off',
-    //'@typescript-eslint/explicit-function-return-type': 'off',
-    //'@typescript-eslint/no-explicit-any': 'off',
+    'no-console': 'off', // Command line scripts
+    '@typescript-eslint/no-explicit-any': 'off', // In deployment scripts we do not bother with return type
     '@typescript-eslint/require-await': 'off',  // assert.rejects pattern in tests
     'max-len': ["error", {
       code: 140,
       ignoreComments: true,
       ignoreTrailingComments: true,
-      ignoreStrings: true
+      ignoreStrings: true,
+      ignoreUrls: true
     }]
   }
 }

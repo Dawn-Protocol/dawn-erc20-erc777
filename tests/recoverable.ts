@@ -3,7 +3,7 @@
  */
 
 import { accounts, contract } from '@openzeppelin/test-environment';
-import { Proxy, ZWeb3 } from '@openzeppelin/upgrades';
+import { ZWeb3 } from '@openzeppelin/upgrades';
 import {
   BN, // Big Number support https://github.com/indutny/bn.js
 } from '@openzeppelin/test-helpers';

@@ -15,6 +15,8 @@ contract TokenFaucet {
 
   uint public amount;
 
+  uint public totalSent;
+
   constructor(address addr, uint _amount) public {
     token = IERC20(addr);
     amount = _amount;
@@ -26,5 +28,6 @@ contract TokenFaucet {
   function fetchTokens() public {
     require(token.balanceOf(address(this)) > amount, "Faucet is out of tokens");
     require(token.transfer(msg.sender, amount) == true, "Token transfer failed");
+    totalSent += amount;
   }
 }

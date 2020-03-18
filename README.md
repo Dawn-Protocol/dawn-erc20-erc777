@@ -167,7 +167,7 @@ You can manually format the source code with `CMD + F1` and choosing `Format doc
 Run `eslint` by hand:
 
 ```bash
-npx eslint --ext .ts tests/
+npx eslint --ext .ts tests/ src/
 ```
 
 # Deploying

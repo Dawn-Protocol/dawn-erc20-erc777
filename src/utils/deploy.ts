@@ -2,20 +2,17 @@
  * Command line deployment utils.
  */
 
-import { ZWeb3, Contracts, SimpleProject } from '@openzeppelin/upgrades';
-import {
-  BN, // Big Number support
-} from '@openzeppelin/test-helpers';
-
-import assert = require('assert');
+import { ZWeb3 } from '@openzeppelin/upgrades';
 
 // Need JS style import
 // https://github.com/ethereum/web3.js/tree/1.x/packages/web3-providers-ws
 // https://github.com/ethereum/web3.js/blob/1.x/packages/web3-providers-ws/src/index.js
-const Web3WsProvider = require('web3-providers-ws');
+import * as Web3WsProvider from 'web3-providers-ws';
 
 // https://github.com/trufflesuite/truffle/blob/develop/packages/hdwallet-provider/src/index.ts
-const HDWalletProvider = require('@truffle/hdwallet-provider');
+import * as HDWalletProvider from '@truffle/hdwallet-provider';
+
+import assert = require('assert');
 
 
 /**
@@ -36,9 +33,9 @@ export async function prepareDeploymentAccount(privateKeyHex: string): Promise<s
   const weiBalance = await web3.eth.getBalance(account.address);
   const ethBalance = web3.utils.fromWei(weiBalance, 'ether');
 
-  // Big number dies on decimals, so feed it only integers
-  const balance = new BN(weiBalance);
+  const balance = web3.utils.toBN(weiBalance);
 
+  // Big number dies on decimals, so feed it only integers
   assert(!balance.isZero(), `Deployment account ${account.address} has no ETH. If this is a testnet account check https://goerli-faucet.slock.it/ to get some testnet ETH.`);
 
   console.log(`Deployment account ${account.address} balance:`, ethBalance, 'ETH');
@@ -50,7 +47,7 @@ export async function prepareDeploymentAccount(privateKeyHex: string): Promise<s
  *  Creates a Web3 provider that uses local private keys for signing the transactions
  *  and WebSockets to communicate and broadcast transactions over Infura node.
  */
-export function createProvider(privateKeys: string[], infuraProjectId: string) {
+export function createProvider(privateKeys: string[], infuraProjectId: string): any {
   // https://github.com/trufflesuite/truffle/tree/develop/packages/hdwallet-provider
 
   // Be explicit on our connection options so we
@@ -77,7 +74,7 @@ export function createProvider(privateKeys: string[], infuraProjectId: string) {
   console.log('Loaded private keys for addresses', walletProvider.getAddresses());
 
   // listen for disconnects
-  function handleDisconnects(e) {
+  function handleDisconnects(e): void {
     console.log('Disconnect', e);
   }
   connectionProvider.on('error', (e) => handleDisconnects(e));
@@ -89,11 +86,12 @@ export function createProvider(privateKeys: string[], infuraProjectId: string) {
 /**
  * Deploy a new contract with a log of debug around what's happening.
  * @param id internally referred contract variable
- * @param contractName Solidity contract name
+ * @param _Contract From Contracts.getFromLocal()
  * @param parameters Array of arguments passed to the contract constructor
- * @param deployer Deployer account
+ * @param txParams Deployment transaction parameters like from and gas
+ * @return Contract instance
  */
-export async function deployContract(id: string, Contract: any, parameters: any, txParams: any): Promise<any> {
+export async function deployContract(id: string, _Contract: any, parameters: any, txParams: any): Promise<any> {
   // Check we have gas money for the deployment
 
   const { web3 } = ZWeb3;
@@ -103,11 +101,11 @@ export async function deployContract(id: string, Contract: any, parameters: any,
   const ethBalance = web3.utils.fromWei(weiBalance, 'ether');
 
   console.log(`Starting to deploy contract ${id}, constructor`, parameters, 'balance left', ethBalance, 'ETH');
-  const p = Contract.new(...parameters, txParams);
+  const p = _Contract.new(...parameters, txParams);
   const deployed = await p;
   console.log(`Deployed ${id} at ${deployed.address}`);
 
-  return Contract.at(deployed.address);
+  return _Contract.at(deployed.address);
 }
 
 

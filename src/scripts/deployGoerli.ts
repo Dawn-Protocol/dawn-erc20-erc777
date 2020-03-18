@@ -8,15 +8,10 @@
  * https://ethereum.stackexchange.com/questions/67407/how-to-deploy-a-smart-contract-using-infura-and-web3js1-x-x-on-nodejs
  */
 
-import { ZWeb3, Contracts, SimpleProject } from '@openzeppelin/upgrades';
-import { promises as fs } from 'fs';
-import Web3 from 'web3';
+import { ZWeb3, Contracts } from '@openzeppelin/upgrades';
 import * as envalid from 'envalid';
 import { Account } from 'eth-lib/lib'; // https://github.com/MaiaVictor/eth-lib/blob/master/src/account.js
-import BigNumber from 'bignumber.js';
-import {
-  BN, // Big Number support https://github.com/indutny/bn.js
-} from '@openzeppelin/test-helpers';
+
 import { prepareDeploymentAccount, createProvider, deployContract } from '../utils/deploy';
 
 // We need all of these secrets from our
@@ -43,7 +38,7 @@ const envOptions = {
 const BURN_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 // How many tokens we approve for the swap
-const SWAP_BUDGET = new BN('5000').mul(new BN('10e18'));
+const SWAP_BUDGET = '5000_000_000_000_000_000_000';
 
 // We run async function because top level await is not supported yet
 async function deploy(): Promise<void> {
@@ -62,6 +57,7 @@ async function deploy(): Promise<void> {
   const DawnTokenImpl = Contracts.getFromLocal('DawnTokenImpl');
   const FirstBloodTokenMock = Contracts.getFromLocal('FirstBloodTokenMock');
   const TokenSwap = Contracts.getFromLocal('TokenSwap');
+  const TokenFaucet = Contracts.getFromLocal('TokenFaucet');
   // const DawnTokenProxy = Contracts.getFromLocal('DawnTokenProxy'); // AdminUpgradeabilityProxy subclass
 
   // Deployer account serves all owner functions
@@ -95,18 +91,69 @@ async function deploy(): Promise<void> {
 
   const newToken = newTokenImpl;
 
-  const oldToken = await deployContract('oldToken', FirstBloodTokenMock, [deployer, 'Mock of old token', 'OLD'], { from: deployer });
+  const oldToken = await deployContract('oldToken', FirstBloodTokenMock, [tokenOwnerAccount.address, 'Mock of old token', 'OLD'], { from: deployer });
+
+  // This one is big so go with a lot of gas
   const tokenSwap = await deployContract('tokenSwap', TokenSwap, [], { from: deployer, gas: 3_000_000 });
 
-  console.log('Initializing token swap');
-  await tokenSwap.methods.initializeTokenSwap(deployer, tokenOwnerAccount.address, signerAccount.address, oldToken.address, newToken.address, BURN_ADDRESS).send({ from: deployer });
+  // Faucet gives 3 tokens at a time
+  const faucetAmount = '3_000_000_000_000_000_000';
+  const faucet = await deployContract('faucet', TokenFaucet, [oldToken.address, faucetAmount], { from: deployer });
 
-  console.log('Approving tokens for swapping');
+  console.log('Initializing token swap');
+  const args = [
+    deployer,
+    tokenOwnerAccount.address,
+    signerAccount.address,
+    oldToken.address,
+    newToken.address,
+    BURN_ADDRESS,
+  ];
+  await tokenSwap.methods.initializeTokenSwap(...args).send({ from: deployer });
+
+  console.log('Approving new tokens for swapping');
   newToken.methods.approve(tokenSwap.address, SWAP_BUDGET.toString()).send({ from: tokenOwnerAccount.address });
+
+  console.log('Make some OLD test tokens available on the faucet');
+  oldToken.methods.transfer(faucet.address, SWAP_BUDGET.toString()).send({ from: tokenOwnerAccount.address });
+
+  // Write report to the console
+
+  console.log(await ZWeb3.getNetworkName(), 'deployment report');
+
+  const legacyTokenInfo = {
+    address: oldToken.address,
+    name: await oldToken.methods.name.call(),
+    symbol: await oldToken.methods.symbol.call(),
+    supply: await oldToken.methods.totalSupply.call(),
+  };
+  console.log('Legacy token', legacyTokenInfo);
+
+  const newTokenInfo = {
+    address: newToken.address,
+    name: await newToken.methods.name.call(),
+    symbol: await newToken.methods.symbol.call(),
+    supply: await newToken.methods.totalSupply.call(),
+  };
+  console.log('New token', newTokenInfo);
+
+  const tokenSwapInfo = {
+    address: tokenSwap.address,
+    tokensLeftToSwap: await tokenSwap.methods.getTokensLeftToSwap().call(),
+    signerKey: signerPrivateKeyHex,
+  };
+  console.log('Token swap', tokenSwapInfo);
+
+  const faucetInfo = {
+    address: faucet.address,
+    faucetAmount: await faucet.methods.amount().call(),
+    balance: await oldToken.methods.balanceOf(faucet.address).call(),
+  };
+  console.log('Faucet', faucetInfo);
 }
 
 // Top level async is not supported yet, so we need to wrap this in a function
-async function run() {
+async function run(): void {
   try {
     await deploy();
   } catch (e) {
