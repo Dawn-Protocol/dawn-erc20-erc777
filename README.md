@@ -170,7 +170,34 @@ Run `eslint` by hand:
 npx eslint --ext .ts tests/
 ```
 
-# Deployment strategy
+# Deploying
+
+## Goerli testnet
+
+Store your private key for the deployment account in `secrets/goerli-deployer-private-key.txt` file
+
+1. Generate a new key
+
+```sh
+openssl rand -hex 32 | tee secrets/goerli-deployer-private-key.txt
+```
+2. Get the address for the private key
+
+```sh
+npx ts-node src/utils/privateKeyToAddress.ts < secrets/goerli-deployer-private-key.txt
+```
+
+3. [Visit faucet to get testnet eth](https://goerli-faucet.slock.it/)
+
+4. [Create account on Infura and get API key for goearly](). Save it in `'secrets/goerli-infura-api-key.txt`.
+
+This will create 2 token contracts, token test faucet and swap contract.
+
+```sh
+npx ts-node src/scripts/deployGoerli.ts
+```
+
+# Production deployment strategy
 
 Two different multi-signature wallets are needed.
 
