@@ -9,6 +9,7 @@ import {
   BN, // Big Number support https://github.com/indutny/bn.js
   constants, // Common constants, like the zero address and largest integers
 } from '@openzeppelin/test-helpers';
+import { signAddress } from '../src/utils/sign';
 
 import assert = require('assert');
 
@@ -45,28 +46,10 @@ let newToken = null; // Proxy
 let oldToken = null; // Lgeacy token
 let tokenSwap = null; // TokenSwap
 
-/**
- * Sign an address on the server side.
- */
-function signAddress(address: string): { signature: string; v: string; r: string; s: string } {
-  assert(address.startsWith('0x'));
 
-  // https://web3js.readthedocs.io/en/v1.2.0/web3-utils.html#id23
-  const hash = soliditySha3({ t: 'address', v: user2 });
-
-  assert(hash.startsWith('0x'));
-
-  // Account.sign() expects input has hex strings
-  // const signature =
-  const signature = Account.sign(hash, signerPrivateKey);
-  const components = Account.decodeSignature(signature);
-
-  return {
-    signature, // Full signature
-    v: components[0], // 0x1b
-    r: components[1], // like: 0x9ece92b5378ac0bfc951b800a7a620edb8618f99d78237436a58e32ba6b0aedc
-    s: components[2], // like: 0x386945ff75168e7bd586ad271c985edff54625bdc36be9d88a65432314542a84
-  };
+// Testing shorthand sign function
+function signTestAddress(addr: string): { signature: string; v: string; r: string; s: string } {
+  return signAddress(signerPrivateKey, addr);
 }
 
 beforeEach(async () => {
@@ -133,7 +116,7 @@ test('TypeScript is self-consistent in cryptography', async () => {
     v, // eslint-disable-line
     r, // eslint-disable-line
     s, // eslint-disable-line
-  } = signAddress(user2);
+  } = signTestAddress(user2);
   const hash = soliditySha3({ t: 'address', v: user2 });
   const recoveredAddress = Account.recover(hash, signature);
   assert(recoveredAddress === signer);
@@ -147,7 +130,7 @@ test('TypeScript and Solidity are consistent in cryptography', async () => {
     v,
     r,
     s, // eslint-disable-line
-  } = signAddress(user2);
+  } = signTestAddress(user2);
 
   // This is an address is a hexadecimal format
   const ourData = user2.toLowerCase();
@@ -186,7 +169,7 @@ test('Swap all tokens', async () => {
     v,
     r,
     s,
-  } = signAddress(user2);
+  } = signTestAddress(user2);
 
   // Do the swap transaction
   assert((await tokenSwap.signerAddress()) === signer);
@@ -219,7 +202,7 @@ test('Swap part of tokens tokens', async () => {
     v,
     r,
     s,
-  } = signAddress(user2);
+  } = signTestAddress(user2);
 
   await tokenSwap.swapTokensForSender(amountToSwap, v, r, s, { from: user2 });
 
@@ -245,7 +228,7 @@ test('Cannot swap with a bad signature', async () => {
     v,
     r, // eslint-disable-line
     s,
-  } = signAddress(user2);
+  } = signTestAddress(user2);
 
   assert.rejects(async () => {
     // Double s instead of r s
@@ -267,7 +250,7 @@ test('Tokens can be send to burn', async () => {
     v,
     r,
     s,
-  } = signAddress(user2);
+  } = signTestAddress(user2);
 
   await tokenSwap.swapTokensForSender(amount, v, r, s, { from: user2 });
 

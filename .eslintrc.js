@@ -26,6 +26,7 @@ module.exports = {
     '@typescript-eslint/no-var-requires': 'off',  // web3 JS dependencies and default exports
     'no-restricted-syntax': 'off', // for...of loops enabled
     'no-await-in-loop': 'off', // Readability
+    'import/prefer-default-export': 'off', // Export individual functions
     'max-len': ["error", {
       code: 140,
       ignoreComments: true,
