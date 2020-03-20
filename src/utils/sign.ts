@@ -7,6 +7,7 @@ import assert = require('assert');
  * Sign an address on the server side.
  */
 export function signAddress(signerPrivateKey: string, addr: string): { signature: string; v: string; r: string; s: string } {
+  assert(signerPrivateKey.startsWith('0x'));
   assert(addr.startsWith('0x'));
 
   // https://web3js.readthedocs.io/en/v1.2.0/web3-utils.html#id23
@@ -17,7 +18,10 @@ export function signAddress(signerPrivateKey: string, addr: string): { signature
   // Account.sign() expects input has hex strings
   // const signature =
   const signature = Account.sign(hash, signerPrivateKey);
+  const account = Account.fromPrivate(signerPrivateKey);
+  console.log('Signing with address', account.address);
   const components = Account.decodeSignature(signature);
+
 
   return {
     signature, // Full signature
