@@ -6,7 +6,7 @@ import assert = require('assert');
 /**
  * Sign an address on the server side.
  */
-export function signAddress(signerPrivateKey: string, addr: string): { signature: string; v: string; r: string; s: string } {
+export function signAddress(signerPrivateKey: string, addr: string): { signature: string; hash: string; v: string; r: string; s: string } {
   assert(signerPrivateKey.startsWith('0x'));
   assert(addr.startsWith('0x'));
 
@@ -20,11 +20,19 @@ export function signAddress(signerPrivateKey: string, addr: string): { signature
   const signature = Account.sign(hash, signerPrivateKey);
   const account = Account.fromPrivate(signerPrivateKey);
   console.log('Signing with address', account.address);
+
   const components = Account.decodeSignature(signature);
 
+  // const address = Account.recover(hash, signature);
+  // console.log('Recovered', address);
+
+  // https://github.com/ethereum/solidity/issues/5109#issuecomment-426203414
+  assert(components[1].length === 66, 'Watch out for zero padded data issues');
+  assert(components[2].length === 66, 'Watch out for zero padded data issues');
 
   return {
     signature, // Full signature
+    hash,
     v: components[0], // 0x1b
     r: components[1], // like: 0x9ece92b5378ac0bfc951b800a7a620edb8618f99d78237436a58e32ba6b0aedc
     s: components[2], // like: 0x386945ff75168e7bd586ad271c985edff54625bdc36be9d88a65432314542a84
