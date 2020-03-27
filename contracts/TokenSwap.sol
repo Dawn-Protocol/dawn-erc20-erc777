@@ -33,6 +33,9 @@ contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
   /* How many tokens we have successfully swapped */
   uint public totalSwapped;
 
+  /* For following in the dashboard */
+  event Swapped(address owner, uint amount);
+
   /**
    *
    * 1. Owner is a multisig wallet
@@ -98,6 +101,8 @@ contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
     require(oldToken.allowance(msg.sender, swapper) >= amount, "You need to first approve() enough tokens to swap for this contract");
     require(oldToken.balanceOf(msg.sender) >= amount, "You do not have enough tokens to swap");
     _swap(msg.sender, amount);
+
+    emit Swapped(msg.sender, amount);
   }
 
   /**

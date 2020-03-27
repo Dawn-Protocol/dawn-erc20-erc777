@@ -2,6 +2,7 @@ pragma solidity ^0.5.0;
 
 // https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/master/contracts/token/ERC20/ERC20Pausable.sol
 import '@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20Pausable.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20Burnable.sol';
 import './Recoverable.sol';
 
 
@@ -11,7 +12,7 @@ import './Recoverable.sol';
  * Needs to be set up behind a proxy contract.
  *
  */
-contract DawnTokenImpl is Recoverable, ERC20Pausable {
+contract DawnTokenImpl is Recoverable, ERC20Pausable, RC20Burnable {
 
   // Because of Upgradeability, not of the variables can be initialised in place
   // https://docs.openzeppelin.com/upgrades/2.7/writing-upgradeable#avoid-initial-values-in-field-declarations
@@ -38,4 +39,6 @@ contract DawnTokenImpl is Recoverable, ERC20Pausable {
     // Set who can recover ETH and tokens send to this smart contract
     _transferOwnership(manager);
   }
+
+
 }
