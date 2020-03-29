@@ -135,6 +135,28 @@ test('User can stake their', async () => {
   });
 });
 
+test('User can unstake their tokens', async () => {
+  // Give user some tokens to stake
+  await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
+
+  // User approves token for the swap
+  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
+
+  // This will create staking id 1
+  await staking.stake({ from: user });
+
+  time.increase(STAKE_DURATION + 1);
+
+  const receipt = await staking.unstake(1, { from: user });
+
+  // Check events are right
+  expectEvent(receipt, 'Unstaked', {
+    staker: user,
+    stakeId: new BN(1),
+    amount: new BN(STAKE_PRICE),
+  });
+});
+
 test('We can recover wrong tokens send to the contract', async () => {
   // Create an independent tthird token,
   // albeit recovery works with legacy and new tokens as well
