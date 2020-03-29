@@ -42,6 +42,6 @@ test('Verify production signing issue', async () => {
 
   // Account.recover() and Solidity ecrecover() agree
   const recoveredAddress = await tokenSwap.recoverAddress(hash, v, r, s);
-  console.log('r', r, 's', s);
+  // console.log('r', r, 's', s);
   assert(recoveredAddress === '0x1906617f5AB7a453917761b2dD8928E789f24d2B');
 });

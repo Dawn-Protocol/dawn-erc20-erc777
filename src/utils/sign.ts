@@ -19,7 +19,7 @@ export function signAddress(signerPrivateKey: string, addr: string): { signature
   // const signature =
   const signature = Account.sign(hash, signerPrivateKey);
   const account = Account.fromPrivate(signerPrivateKey);
-  console.log('Signing with address', account.address);
+  // console.log('Signing with address', account.address);
 
   const components = Account.decodeSignature(signature);
 

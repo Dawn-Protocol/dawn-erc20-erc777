@@ -12,7 +12,7 @@ import './Recoverable.sol';
  * Needs to be set up behind a proxy contract.
  *
  */
-contract DawnTokenImpl is Recoverable, ERC20Pausable, RC20Burnable {
+contract DawnTokenImpl is Recoverable, ERC20Pausable, ERC20Burnable {
 
   // Because of Upgradeability, not of the variables can be initialised in place
   // https://docs.openzeppelin.com/upgrades/2.7/writing-upgradeable#avoid-initial-values-in-field-declarations
