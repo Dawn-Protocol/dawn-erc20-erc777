@@ -6,9 +6,12 @@ import { accounts, contract } from '@openzeppelin/test-environment';
 import { Account } from 'eth-lib/lib'; // https://github.com/MaiaVictor/eth-lib/blob/master/src/account.js
 import { sha3, soliditySha3 } from 'web3-utils';
 import {
+  expectRevert, // https://docs.openzeppelin.com/test-helpers/0.5/api#expect-revert
+  expectEvent, // https://docs.openzeppelin.com/test-helpers/0.5/api#expect-event
   BN, // Big Number support https://github.com/indutny/bn.js
   constants, // Common constants, like the zero address and largest integers
 } from '@openzeppelin/test-helpers';
+
 import { signAddress } from '../src/utils/sign';
 
 import assert = require('assert');
@@ -79,17 +82,19 @@ test('Initial staking contract values are good', async () => {
 
 test('Only owne can reset oracle', async () => {
   assert(await staking.stakePriceOracle() === oracle);
-  staking.setOracle(user2, { from: owner });
+
+  const receipt = await staking.setOracle(user2, { from: owner });
+
+  // Check the events
+  expectEvent(receipt, 'OracleChanged', { newOracle: user2 });
+
+  // State was updated
   assert(await staking.stakePriceOracle() === user2);
 
-  assert.rejects(
-    async () => {
-      await staking.setOracle(user, { from: user });
-    },
-    {
-      message:
-        'Returned error: VM Exception while processing transaction: revert Ownable: caller is not the owner -- Reason given: Ownable: caller is not the owner.',
-    },
+  // Random users cannot reset the oracle
+  await expectRevert(
+    staking.setOracle(user, { from: user }),
+    'Ownable: caller is not the owner',
   );
 });
 

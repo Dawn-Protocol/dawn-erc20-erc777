@@ -5,6 +5,7 @@
 import { accounts, contract } from '@openzeppelin/test-environment';
 import { Account } from 'eth-lib/lib'; // https://github.com/MaiaVictor/eth-lib/blob/master/src/account.js
 import { sha3, soliditySha3 } from 'web3-utils';
+import { expectRevert } from '@openzeppelin/test-helpers';
 import { signAddress } from '../src/utils/sign';
 
 import assert = require('assert');
