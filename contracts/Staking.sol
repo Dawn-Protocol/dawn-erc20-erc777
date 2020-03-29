@@ -128,7 +128,7 @@ contract Staking is Initializable, Pausable, Ownable, Recoverable {
   /**
    * Return data for a single stake.
    */
-  function getStakeInformation(uint stakeId) public view returns (address, uint, uint) {
+  function getStakeInformation(uint stakeId) public view returns (address staker, uint amount, uint endsAt) {
     Stake memory s = stakes[stakeId];
     return (s.owner, s.amount, s.endsAt);
   }

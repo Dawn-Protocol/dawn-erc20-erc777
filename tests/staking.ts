@@ -9,7 +9,8 @@ import {
   expectRevert, // https://docs.openzeppelin.com/test-helpers/0.5/api#expect-revert
   expectEvent, // https://docs.openzeppelin.com/test-helpers/0.5/api#expect-event
   BN, // Big Number support https://github.com/indutny/bn.js
-  constants, // Common constants, like the zero address and largest integers
+  constants, // Common constants, like the zero address and largest integers,
+  time, // https://docs.openzeppelin.com/test-helpers/0.5/api#latest
 } from '@openzeppelin/test-helpers';
 
 import { signAddress } from '../src/utils/sign';
@@ -99,6 +100,41 @@ test('Only owne can reset oracle', async () => {
 });
 
 
+test('User can stake their', async () => {
+  // Give user some tokens to stake
+  await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
+
+  // User approves token for the swap
+  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
+
+  // When we think the user stake should end
+  const estimatedEndsAt = (await time.latest()).add(new BN(STAKE_DURATION));
+
+  // This will create staking id 1
+  const receipt = await staking.stake({ from: user });
+
+  // Check the state is right
+  assert((await staking.currentlyStaked()).toString() === STAKE_PRICE.toString());
+  assert((await staking.totalStaked()).toString() === STAKE_PRICE.toString());
+  assert(await staking.isStillStaked(1) === true);
+  assert((await newToken.balanceOf(staking.address)).toString() === STAKE_PRICE.toString());
+  assert((await newToken.balanceOf(user)).toString() === '10'.toString());
+
+  // Check the stake data
+  const { staker, amount, endsAt } = await staking.getStakeInformation(1);
+  assert(staker === user);
+  assert(amount.toString() === STAKE_PRICE.toString());
+  assert(endsAt.toString() === estimatedEndsAt.toString());
+
+  // Check events are right
+  expectEvent(receipt, 'Staked', {
+    staker: user,
+    stakeId: new BN(1),
+    amount: new BN(STAKE_PRICE),
+    endsAt,
+  });
+});
+
 test('We can recover wrong tokens send to the contract', async () => {
   // Create an independent tthird token,
   // albeit recovery works with legacy and new tokens as well
@@ -129,3 +165,5 @@ test('We can recover wrong tokens send to the contract', async () => {
   const ownerBal = await thirdToken.balanceOf(owner);
   assert(ownerBal.toString() === amount.toString());
 });
+
+// Test pausable
