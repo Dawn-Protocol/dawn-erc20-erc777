@@ -7,8 +7,6 @@ import '@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.so
 import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 import './Recoverable.sol';
 
-
-
 /**
  * Allows token owners to lock tokens for the period of time.
  *

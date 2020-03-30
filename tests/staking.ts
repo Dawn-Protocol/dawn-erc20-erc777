@@ -34,6 +34,12 @@ const STAKE_PRICE = 1000;
 // Stake will last one day in the tests
 const STAKE_DURATION = 24 * 60 * 60;
 
+// Used when the price changes in the middle of staking
+const STAKE_PRICE_2 = 1500;
+
+// Used whn the price changes in the middle of staking
+const STAKE_DURATION_2 = 48 * 60 * 60;
+
 // Loads a compiled contract using OpenZeppelin test-environment
 const DawnTokenImpl = contract.fromArtifact('DawnTokenImpl');
 const Staking = contract.fromArtifact('Staking');
@@ -97,7 +103,7 @@ test('Cannot initialize twice', async () => {
 });
 
 
-test('Only owne can reset oracle', async () => {
+test('Only owner can reset oracle', async () => {
   assert(await staking.stakePriceOracle() === oracle);
 
   const receipt = await staking.setOracle(user2, { from: owner });
@@ -116,32 +122,41 @@ test('Only owne can reset oracle', async () => {
 });
 
 
-test('User can stake their', async () => {
+test('Only oracle can set pricing', async () => {
+  const receipt = await staking.setStakingParameters(STAKE_PRICE_2, STAKE_DURATION_2, { from: oracle });
+  // Check events are right
+  expectEvent(receipt, 'StakingParametersChanged', {
+    amount: new BN(STAKE_PRICE_2),
+    time: new BN(STAKE_DURATION_2),
+  });
+  // Random users cannot set pricing
+  await expectRevert(
+    staking.setStakingParameters(STAKE_PRICE, STAKE_DURATION, { from: user }),
+    'Only oracle can set pricing',
+  );
+});
+
+
+test('User can stake their tokens', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
-
   // User approves token for the swap
   await newToken.approve(staking.address, STAKE_PRICE, { from: user });
-
   // When we think the user stake should end
   const estimatedEndsAt = (await time.latest()).add(new BN(STAKE_DURATION));
-
   // This will create staking id 1
   const receipt = await staking.stake({ from: user });
-
   // Check the state is right
   assert((await staking.currentlyStaked()).toString() === STAKE_PRICE.toString());
   assert((await staking.totalStaked()).toString() === STAKE_PRICE.toString());
   assert(await staking.isStillStaked(1) === true);
   assert((await newToken.balanceOf(staking.address)).toString() === STAKE_PRICE.toString());
   assert((await newToken.balanceOf(user)).toString() === '10'.toString());
-
   // Check the stake data
   const { staker, amount, endsAt } = await staking.getStakeInformation(1);
   assert(staker === user);
   assert(amount.toString() === STAKE_PRICE.toString());
   assert(endsAt.toString() === estimatedEndsAt.toString());
-
   // Check events are right
   expectEvent(receipt, 'Staked', {
     staker: user,
@@ -189,7 +204,6 @@ test('User cannot unstake their tokens too soon', async () => {
   // This will create staking id 1
   await staking.stake({ from: user });
   time.increase(STAKE_DURATION - 2);
-
   // Random users cannot reset the oracle
   await expectRevert(
     staking.unstake(1, { from: user }),
@@ -217,6 +231,76 @@ test('Users cannot stake or unstake while paused', async () => {
   // Unpause and we can stake again
   await staking.unpause({ from: owner });
   await staking.stake({ from: user });
+});
+
+
+test('User need enough allowance to stake', async () => {
+  // Give user some tokens to stake
+  await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
+  // User approves token for the swap
+  await newToken.approve(staking.address, STAKE_PRICE / 2, { from: user });
+  await expectRevert(
+    staking.stake({ from: user }),
+    'You need to first approve() enough tokens to stake',
+  );
+});
+
+
+test('User need enough tokens to stake', async () => {
+  // Give user some tokens to stake
+  await newToken.transfer(user, STAKE_PRICE - 1, { from: owner });
+  // User approves token for the swap
+  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
+  await expectRevert(
+    staking.stake({ from: user }),
+    'You do not have enough tokens to stake in your wallet',
+  );
+});
+
+
+test('Two different users can stake on different staking periods', async () => {
+  // Give user some tokens to stake
+  await newToken.transfer(user, STAKE_PRICE, { from: owner });
+  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
+  await newToken.transfer(user2, STAKE_PRICE_2, { from: owner });
+  await newToken.approve(staking.address, STAKE_PRICE_2, { from: user2 });
+  // User 1 stakes
+  await staking.stake({ from: user });
+  time.increase(5);
+  // User 2 stakes
+  await staking.setStakingParameters(STAKE_PRICE_2, STAKE_DURATION_2, { from: oracle });
+  await staking.stake({ from: user2 });
+  // Check state
+  assert((await staking.currentlyStaked()).toNumber() === STAKE_PRICE + STAKE_PRICE_2);
+  assert((await staking.totalStaked()).toNumber() === STAKE_PRICE + STAKE_PRICE_2);
+  assert(await staking.isStillStaked(1) === true);
+  assert(await staking.isStillStaked(2) === true);
+  assert((await staking.stakeNumber()).toNumber() === 2);
+  assert((await newToken.balanceOf(staking.address)).toNumber() === STAKE_PRICE + STAKE_PRICE_2);
+  const stake1 = await staking.getStakeInformation(1);
+  assert(stake1.staker === user);
+  const stake2 = await staking.getStakeInformation(2);
+  assert(stake2.staker === user2);
+  assert(stake2.endsAt.toString() !== stake1.endsAt.toString());
+  assert(stake2.amount.toString() !== stake1.amount.toString());
+  // User 1 cannot unstake yet
+  await expectRevert(
+    staking.unstake(1, { from: user }),
+    'Unstaking too soon',
+  );
+  // Go forward until both stakes have expired
+  await time.increase(STAKE_DURATION_2);
+  // User 2 cannot unstake for user 1
+  await expectRevert(
+    staking.unstake(1, { from: user2 }),
+    'Not your stake',
+  );
+  // Unstake both in different order
+  await staking.unstake(2, { from: user2 });
+  await staking.unstake(1, { from: user });
+  assert((await newToken.balanceOf(user)).toNumber() === STAKE_PRICE);
+  assert((await newToken.balanceOf(user2)).toNumber() === STAKE_PRICE_2);
+  assert((await newToken.balanceOf(staking.address)).toNumber() === 0);
 });
 
 
