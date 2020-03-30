@@ -121,6 +121,12 @@ to take the first steps towards a more decentralized ecosystem over the time.
 Recoverable is a mix-in contract that allows the owner to reclaim any
 ERC-20 tokens send on the contract.
 
+## TokenFaucet
+
+The token faucet contract is a simple test token give away contract.
+Its intend is to give people tokens in the (Görli) testnet, so they can
+interact with the token swap on the beta website.
+
 # Testing
 
 You need to generate ABI files in `build/`
