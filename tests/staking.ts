@@ -81,6 +81,22 @@ test('Initial staking contract values are good', async () => {
 });
 
 
+test('Cannot initialize twice', async () => {
+  // Avoid the infamous Parity wallet bug
+  // Call our initializer
+  await expectRevert(
+    staking.initializeStaking(deployer, owner, newToken.address, STAKE_PRICE, STAKE_DURATION, oracle, ({ from: deployer })),
+    'Contract instance has already been initialized',
+  );
+  // Avoid the infamous Parity wallet bug
+  // Call "overridden" initializer
+  await expectRevert(
+    staking.initialize(deployer),
+    'Contract instance has already been initialized',
+  );
+});
+
+
 test('Only owne can reset oracle', async () => {
   assert(await staking.stakePriceOracle() === oracle);
 
@@ -135,27 +151,74 @@ test('User can stake their', async () => {
   });
 });
 
+
 test('User can unstake their tokens', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
-
   // User approves token for the swap
   await newToken.approve(staking.address, STAKE_PRICE, { from: user });
-
   // This will create staking id 1
   await staking.stake({ from: user });
-
   time.increase(STAKE_DURATION + 1);
-
   const receipt = await staking.unstake(1, { from: user });
-
   // Check events are right
   expectEvent(receipt, 'Unstaked', {
     staker: user,
     stakeId: new BN(1),
     amount: new BN(STAKE_PRICE),
   });
+  // Check the state is right
+  assert((await staking.currentlyStaked()).toString() === '0');
+  assert((await staking.totalStaked()).toString() === STAKE_PRICE.toString());
+  assert(await staking.isStillStaked(1) === false);
+  assert((await newToken.balanceOf(staking.address)).toString() === '0');
+  assert((await newToken.balanceOf(user)).toString() === (STAKE_PRICE + 10).toString().toString());
+  // Check the stake data
+  const { staker, amount, endsAt } = await staking.getStakeInformation(1);
+  assert(staker === user);
+  assert(amount.toString() === STAKE_PRICE.toString());
+  assert(endsAt.toString() === '0'); // Signals that the tokens have been unstaked
 });
+
+
+test('User cannot unstake their tokens too soon', async () => {
+  // Give user some tokens to stake
+  await newToken.transfer(user, STAKE_PRICE, { from: owner });
+  // User approves token for the swap
+  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
+  // This will create staking id 1
+  await staking.stake({ from: user });
+  time.increase(STAKE_DURATION - 2);
+
+  // Random users cannot reset the oracle
+  await expectRevert(
+    staking.unstake(1, { from: user }),
+    'Unstaking too soon',
+  );
+});
+
+
+test('Users cannot stake or unstake while paused', async () => {
+  // Give user some tokens to stake
+  await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
+  // User approves token for the swap
+  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
+  // Set the paused state
+  await staking.pause({ from: owner });
+  await expectRevert(
+    staking.stake({ from: user }),
+    'Pausable: paused',
+  );
+  // Random users cannot reset the oracle
+  await expectRevert(
+    staking.unstake(1, { from: user }),
+    'Pausable: paused',
+  );
+  // Unpause and we can stake again
+  await staking.unpause({ from: owner });
+  await staking.stake({ from: user });
+});
+
 
 test('We can recover wrong tokens send to the contract', async () => {
   // Create an independent tthird token,
@@ -164,28 +227,18 @@ test('We can recover wrong tokens send to the contract', async () => {
     from: deployer,
   });
   await thirdToken.initialize(deployer, thirdTokenOwner, 'Third Token', '3RD');
-
   const amount = new BN('100');
-
   await thirdToken.transfer(user2, amount, { from: thirdTokenOwner });
-
   // Accidentally sending tokens to the smart contract
   await thirdToken.transfer(staking.address, amount, { from: user2 });
-
   let bal = await thirdToken.balanceOf(staking.address);
   assert(bal.gt(0));
-
   // We know how many tokens we can recover
   const recoverable = await staking.tokensToBeReturned(thirdToken.address);
   assert(recoverable.toString() === amount.toString(0));
-
   await staking.recoverTokens(thirdToken.address, { from: owner });
-
   bal = await thirdToken.balanceOf(staking.address);
   assert(bal.isZero());
-
   const ownerBal = await thirdToken.balanceOf(owner);
   assert(ownerBal.toString() === amount.toString());
 });
-
-// Test pausable

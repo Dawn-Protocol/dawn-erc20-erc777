@@ -144,6 +144,7 @@ contract Staking is Initializable, Pausable, Ownable, Recoverable {
     address sender = _msgSender();
     Stake memory s = stakes[stakeId];
     require(s.endsAt != 0, "Already unstaked");
+    require(now >= s.endsAt, "Unstaking too soon");
     require(s.owner == sender, "Not your stake");
     require(token.transfer(sender, s.amount) == true, "Could not return tokens");
 
