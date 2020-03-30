@@ -100,7 +100,7 @@ to take the first steps towards a more decentralized ecosystem over the time.
 
 ### Staking deployment
 
-!(docs/deployment/staking.png)[staking deployment]
+![staking deployment](docs/deployment/staking.png)
 
 * Staking contract is in-house, written from the scratch
 
