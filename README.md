@@ -4,10 +4,10 @@ This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](http
 
 # Introduction
 
-* Dawn token (DAWN) is a new token that is 1:1 swapped from the existing [FirstBlood 1ST token](https://github.com/Firstbloodio/token)
+* Dawn token (DAWN) is a new token that is 1:1 swapped from the existing [FirstBlood 1ST token](https://github.com/Firstbloodio/token).
 
-* Token swap requires an identity verification that is done on the server-side,
-  using a Solidity `ecrecover()` signing
+* Token swap requires an identity verification that is done on the server-side whitelisting,
+  using a Solidity `ecrecover()` signing.
 
 * DAWN can be used on FirstBlood platform and other services as a utility token: method of payment, staking, etc.
 
@@ -17,18 +17,18 @@ This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](http
   This makes it easier to use token in various decentralised finance services like decentralised exchanages (DEXes)
   and lending pools.
 
-* Token smart contract supports recovering ether and tokens accidentally send into it
+* Token smart contract supports recovering ether and tokens accidentally send into it.
 
-* The token is upgradeable through [OpenZeppelin proxy pattern](https://docs.openzeppelin.com/learn/upgrading-smart-contracts) ([actual contracts](https://github.com/OpenZeppelin/openzeppelin-sdk/tree/master/packages/lib/contracts/upgradeability)).
+* The token is upgradeable through [OpenZeppelin proxy pattern](https://docs.openzeppelin.com/learn/upgrading-smart-contracts)
+  ([actual contracts](https://github.com/OpenZeppelin/openzeppelin-sdk/tree/master/packages/lib/contracts/upgradeability)).
 
-* Token implements EOS ERC-20 like freeze that will be activated if and when the tokens are migrated to a new network.
+* Token implements transfer pause that will be activated if and when the tokens are migrated to a new network.
   This is implemented using [OpenZeppelin pausable trait](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20Pausable.sol).
+  This is similar what EOS did with their genesis block.
 
-* Token implements [MakerDAO MCD like approve-by-signature, or permit(), system allowing easier interaction with smart contracts](https://github.com/makerdao/dss/blob/master/src/dai.sol#L117)
+* Token smart contract supports burning of tokens to allow new utility models in the future.
 
-* [GSN support: TODO](https://forum.openzeppelin.com/t/creating-an-erc-20-token-that-supports-gsn-transactions/2425)
-
-# Software versions used
+# Software required
 
 * solc 0.5.16
 
@@ -38,17 +38,90 @@ This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](http
 
 * [npx](https://www.npmjs.com/package/npx)
 
+# Overview
+
+Below is an narrative introduction how contracts are deployed and engineered.
+
+# Base packages
+
+All contracts are based on base contracts from [OpenZeppelin SDK](https://github.com/OpenZeppelin/openzeppelin-sdk) package.
+This package differs from more well known [openzeppelin-solidity](https://github.com/OpenZeppelin/openzeppelin-sdk)
+package, as all contracts use `Initializer` pattern instead of `constructor` pattern to set up the contracts.
+This is done to support Upgrade Proxies that do not work with direct constructors.
+
+Although, currently only Dawn ERC-20 token contracts is upgradeable, we do not want to mix contracts
+with the same name from two different packages, so all contracts are done using OpenZeppelin SDK flavour.
+
+## Token
+
+Token is based on OpenZeppelin upgradeable ERC-20 contract.
+
+### Token deployment
+
+![token deployment](docs/deployment/token.png)
+
+The upgrade proxy contract is the actual "published" token contract.
+
+* Upgrade proxy will be controlled by its own multisig, as `owner()` of token cannot be shared between
+  proxy and the actual implementation
+
+* Token owner multisig can pause the token - an action that might later required in a chain migration
+
+* Token supports the following traits: Burnable, Pausable, Recoverable
+
+## Token swap
+
+The token swap contract is written from the scratch for this swap.
+
+### Token swap deployment
+
+![token swap deployment](docs/deployment/token-swap.png)
+
+* The new token supply is held in the owner multisig and approve()'ed for the token swap
+
+* The users will `approve()` their old tokens for the swap and then perform a `swap()` transaction
+
+* Each `swap()` transaction requires a server-side calculation of v, r, and s. We use this
+  with `ecrecover()` to check that the address performing the swap was whitelisted by our server.
+
+* Token swap contract has `Recoverable` trait to help users with the issues of missending wrong tokens
+  on the contract
+
+* Token swap contract has a `burn()` with a destination, where the old tokens can
+  be send to die by the swap owner.
+  The legacy 1ST token does not have a burn trait, so these tokens are simply
+  send to the zero address.
+
+## Staking
+
+A staking contracts allows users to lock up a predefined amount of tokens for a predefined time.
+This is the simplest form of staking, allowing FirstBlood and other eSports actors
+to take the first steps towards a more decentralized ecosystem over the time.
+
+### Staking deployment
+
+!(docs/deployment/staking.png)[staking deployment]
+
+* Staking contract is in-house, written from the scratch
+
+* Users can `stake()` their tokens and get an id for their stake
+
+* These ids can be parsed fron Ethereum event logs. A server-side component we call
+  cashier reads these events and can perform actions on user accounts based on them.
+
+* Later, after the stake period is expired, the user can `unstake()` their tokens using the given id
+
+* User can run multiple stakes a the same time, though there is no real use case for this
+
+* Staking contract has `Recoverable` trait to help users with the issues of missending wrong tokens
+  on the contract
+
+## Recoverable
+
+Recoverable is a mix-in contract that allows the owner to reclaim any
+ERC-20 tokens send on the contract.
+
 # Testing
-
-You need to manual compile contracts before running tests:
-
-```sh
-npx truffle compile
-```
-
-Jest testing is [based on this example](https://github.com/adrianmcli/ganache-jest-example).
-
-## Running tests
 
 You need to generate ABI files in `build/`
 
@@ -59,7 +132,7 @@ npx truffle compile
 Then you can run tests with Jest:
 
 ```sh
-npm run test
+npx jest
 ```
 
 ## Running a single text

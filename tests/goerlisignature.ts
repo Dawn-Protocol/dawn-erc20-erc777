@@ -3,9 +3,6 @@
  */
 
 import { accounts, contract } from '@openzeppelin/test-environment';
-import { Account } from 'eth-lib/lib'; // https://github.com/MaiaVictor/eth-lib/blob/master/src/account.js
-import { sha3, soliditySha3 } from 'web3-utils';
-import { expectRevert } from '@openzeppelin/test-helpers';
 import { signAddress } from '../src/utils/sign';
 
 import assert = require('assert');
@@ -18,8 +15,6 @@ const [
 // Signer is the server-side private key that whitelists transactions.
 // For this account, we need to also have our private key
 const signerPrivateKey = '0x39cc67e7dbf2c162095bfc058f4b7ba2f9aa7ec006f9e28dc438c07662a3bb41';
-const signerAccount = Account.fromPrivate(signerPrivateKey);
-const signer = signerAccount.address;
 
 const TokenSwap = contract.fromArtifact('TokenSwap');
 

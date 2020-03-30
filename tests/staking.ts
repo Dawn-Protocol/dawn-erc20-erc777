@@ -3,17 +3,12 @@
  */
 
 import { accounts, contract } from '@openzeppelin/test-environment';
-import { Account } from 'eth-lib/lib'; // https://github.com/MaiaVictor/eth-lib/blob/master/src/account.js
-import { sha3, soliditySha3 } from 'web3-utils';
 import {
   expectRevert, // https://docs.openzeppelin.com/test-helpers/0.5/api#expect-revert
   expectEvent, // https://docs.openzeppelin.com/test-helpers/0.5/api#expect-event
   BN, // Big Number support https://github.com/indutny/bn.js
-  constants, // Common constants, like the zero address and largest integers,
   time, // https://docs.openzeppelin.com/test-helpers/0.5/api#latest
 } from '@openzeppelin/test-helpers';
-
-import { signAddress } from '../src/utils/sign';
 
 import assert = require('assert');
 
