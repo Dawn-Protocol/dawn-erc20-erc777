@@ -37,7 +37,7 @@ contract Staking is Initializable, Pausable, Ownable, Recoverable {
   }
 
   // Trusted DAWN token contract
-  IERC20 token;
+  IERC20 public token;
 
   // How many takens the user can stak
   uint public stakingAmount;

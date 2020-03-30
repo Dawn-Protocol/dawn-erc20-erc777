@@ -304,6 +304,25 @@ test('Two different users can stake on different staking periods', async () => {
 });
 
 
+test('User cannot unstake twice', async () => {
+  // Give user some tokens to stake
+  await newToken.transfer(user, STAKE_PRICE, { from: owner });
+  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
+  await newToken.transfer(user2, STAKE_PRICE_2, { from: owner });
+  await newToken.approve(staking.address, STAKE_PRICE_2, { from: user2 });
+  // Add enough balance for 2 unstakes
+  await staking.stake({ from: user });
+  await staking.stake({ from: user2 });
+  await time.increase(STAKE_DURATION_2);
+  // User 1 cannot unstake stwice
+  await staking.unstake(1, { from: user });
+  await expectRevert(
+    staking.unstake(1, { from: user }),
+    'Already unstaked',
+  );
+});
+
+
 test('We can recover wrong tokens send to the contract', async () => {
   // Create an independent tthird token,
   // albeit recovery works with legacy and new tokens as well
