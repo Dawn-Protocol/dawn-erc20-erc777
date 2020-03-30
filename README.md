@@ -116,6 +116,10 @@ to take the first steps towards a more decentralized ecosystem over the time.
 * Staking contract has `Recoverable` trait to help users with the issues of missending wrong tokens
   on the contract
 
+* There is a special account, `stakingOracle`, that can set the stake amount and period.
+  This gives flexibility e.g. to automate staking amount to follow a predefined US dollar
+  price in the future.
+
 ## Recoverable
 
 Recoverable is a mix-in contract that allows the owner to reclaim any
