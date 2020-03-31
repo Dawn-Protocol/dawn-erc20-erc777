@@ -1,5 +1,5 @@
 /**
- * Deploy all mock contracts to Goerli testnet.
+ * Deploy all mock contracts to Goerli/Ropsten testnet.
  *
  * Using OpenZeppelin SDK https://github.com/OpenZeppelin/openzeppelin-sdk
  *
@@ -8,11 +8,13 @@
  * https://ethereum.stackexchange.com/questions/67407/how-to-deploy-a-smart-contract-using-infura-and-web3js1-x-x-on-nodejs
  */
 
-import { ZWeb3, Contracts } from '@openzeppelin/upgrades';
+import { Proxy, ZWeb3, Contracts } from '@openzeppelin/upgrades';
 import * as envalid from 'envalid';
 import { Account } from 'eth-lib/lib'; // https://github.com/MaiaVictor/eth-lib/blob/master/src/account.js
 
 import { checkDeploymentAccounts, createProvider, deployContract } from '../utils/deploy';
+
+import assert = require('assert');
 
 // We need all of these secrets from our
 // secrets/goerli.env.ini config file
@@ -26,13 +28,20 @@ const inputs = {
   // Account that is assigned to be the token owner
   tokenOwnerPrivateKeyHex: envalid.str(),
 
-  // Infura project id key for command-line web3 client for Goerli network
+  // Account that is allowed to set pricing for staking
+  oraclePrivateKeyHex: envalid.str(),
+
+  // Upgrade proxy owner key
+  proxyOwnerPrivateKeyHex: envalid.str(),
+
+  // Infura project id key for command-line web3 client for testnet
   infuraProjectId: envalid.str(),
+
 };
 
 // https://www.npmjs.com/package/envalid
 const envOptions = {
-  dotEnvPath: 'secrets/goerli.env.ini',
+  dotEnvPath: 'secrets/testnet.env.ini',
 };
 
 const BURN_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -40,10 +49,21 @@ const BURN_ADDRESS = '0x0000000000000000000000000000000000000000';
 // How many tokens we approve for the swap 5000_000_000_000_000_000_000
 const SWAP_BUDGET = '5000000000000000000000';
 
+// Test staking price is 2.5 tokens
+const STAKING_PRICE = '2500000000000000000';
+
+// Testnet staking duration is one day
+const STAKING_TIME = 24 * 3600;
+
 // We run async function because top level await is not supported yet
 async function deploy(): Promise<void> {
   const {
-    deployerPrivateKeyHex, signerPrivateKeyHex, tokenOwnerPrivateKeyHex, infuraProjectId,
+    deployerPrivateKeyHex,
+    signerPrivateKeyHex,
+    tokenOwnerPrivateKeyHex,
+    oraclePrivateKeyHex,
+    infuraProjectId,
+    proxyOwnerPrivateKeyHex,
   } = envalid.cleanEnv(process.env, inputs, envOptions);
 
   // Get a websocket that connects us to Infura Ethereum node
@@ -61,15 +81,18 @@ async function deploy(): Promise<void> {
 
   // Loads a compiled contract using OpenZeppelin test-environment
   const DawnTokenImpl = Contracts.getFromLocal('DawnTokenImpl');
+  const DawnTokenProxy = Contracts.getFromLocal('DawnTokenProxy');
   const FirstBloodTokenMock = Contracts.getFromLocal('FirstBloodTokenMock');
   const TokenSwap = Contracts.getFromLocal('TokenSwap');
   const TokenFaucet = Contracts.getFromLocal('TokenFaucet');
-  // const DawnTokenProxy = Contracts.getFromLocal('DawnTokenProxy'); // AdminUpgradeabilityProxy subclass
+  const Staking = Contracts.getFromLocal('Staking');
 
   // Deployer account serves all owner functions
   const deployer = Account.fromPrivate(`0x${deployerPrivateKeyHex}`).address;
   const signerAccount = Account.fromPrivate(`0x${signerPrivateKeyHex}`);
   const tokenOwnerAccount = Account.fromPrivate(`0x${tokenOwnerPrivateKeyHex}`);
+  const oracleAccount = Account.fromPrivate(`0x${oraclePrivateKeyHex}`);
+  const proxyOwner = Account.fromPrivate(`0x${proxyOwnerPrivateKeyHex}`);
 
   // Here we refer the token contract directly without going through the proxy
   const newTokenImpl = await deployContract('newTokenImpl', DawnTokenImpl, [deployer], { from: deployer });
@@ -83,19 +106,25 @@ async function deploy(): Promise<void> {
   //
   // Copied from
   // https://github.com/OpenZeppelin/openzeppelin-sdk/blob/master/packages/lib/test/contracts/upgradeability/AdminUpgradeabilityProxy.test.js
-
-  // const initializeData = Buffer.from('');
-  // proxyContract = await deployContract('proxyContract', DawnTokenProxy, [newTokenImpl.address, proxyOwner], initializeData, { from: deployer });
-
-  // console.log('New token', newTokenImpl);
+  const initializeData = Buffer.from('');
+  const proxy = await deployContract('proxy', DawnTokenProxy, [newTokenImpl.address, proxyOwner.address, initializeData], { from: deployer });
+  const proxyWrapper = new Proxy(proxy.address);
+  // Proxy contract will
+  // 1. Store all data, current implementation and future implementations
+  // 2. Have a mechanism for proxy owner to change the implementation pointer to a new smart contract
+  //
+  // Note that this means that you can never call tokenImpl contract directly - because if you call it directly
+  // all the memory (data) is missing as it is hold on the proxy contract
+  //
+  // Copied from
+  // https://github.com/OpenZeppelin/openzeppelin-sdk/blob/master/packages/lib/test/contracts/upgradeability/AdminUpgradeabilityProxy.test.js
 
   // Call pattern here is standard web3.contract, not OpenZeppelin one
   // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#methods-mymethod-send
 
-  console.log('Initializing new token');
-  await newTokenImpl.methods.initialize(deployer, tokenOwnerAccount.address, 'Mock of new token', 'NEW').send({ from: deployer });
-
-  const newToken = newTokenImpl;
+  console.log('Initializing new token at proxy address space of', proxy.address);
+  const newToken = DawnTokenImpl.at(proxy.address);
+  await newToken.methods.initialize(deployer, tokenOwnerAccount.address, 'Mock of new token', 'NEW').send({ from: deployer });
 
   const oldToken = await deployContract('oldToken', FirstBloodTokenMock, [tokenOwnerAccount.address, 'Mock of old token', 'OLD'], { from: deployer, gas: 3_000_000 });
 
@@ -106,8 +135,10 @@ async function deploy(): Promise<void> {
   const faucetAmount = '3000000000000000000';
   const faucet = await deployContract('faucet', TokenFaucet, [oldToken.address, faucetAmount], { from: deployer });
 
+  const staking = await deployContract('staking', Staking, [], { from: deployer, gas: 3_000_000 });
+
   console.log('Initializing token swap');
-  const args = [
+  let args = [
     deployer,
     tokenOwnerAccount.address,
     signerAccount.address,
@@ -117,6 +148,17 @@ async function deploy(): Promise<void> {
   ];
   await tokenSwap.methods.initializeTokenSwap(...args).send({ from: deployer });
 
+  console.log('Initializing staking');
+  args = [
+    deployer,
+    tokenOwnerAccount.address,
+    newToken.address,
+    STAKING_PRICE,
+    STAKING_TIME,
+    oracleAccount.address,
+  ];
+  await staking.methods.initializeStaking(...args).send({ from: deployer });
+
   console.log('Approving new tokens for swapping');
   await newToken.methods.approve(tokenSwap.address, SWAP_BUDGET.toString()).send({ from: tokenOwnerAccount.address });
 
@@ -124,7 +166,6 @@ async function deploy(): Promise<void> {
   await oldToken.methods.transfer(faucet.address, SWAP_BUDGET.toString()).send({ from: tokenOwnerAccount.address });
 
   // Write report to the console
-
   console.log(await ZWeb3.getNetworkName(), 'deployment report');
 
   const legacyTokenInfo = {
@@ -135,13 +176,21 @@ async function deploy(): Promise<void> {
   };
   console.log('Legacy token', legacyTokenInfo);
 
-  const newTokenInfo = {
+  const upgradeProxyInfo = {
     address: newToken.address,
+    admin: await proxyWrapper.admin(),
+    implementation: await proxyWrapper.implementation(),
+  };
+  console.log('Upgrade proxy for new token', upgradeProxyInfo);
+
+  const newTokenInfo = {
     name: await newToken.methods.name().call(),
+    address: upgradeProxyInfo.address,
     symbol: await newToken.methods.symbol().call(),
     supply: await newToken.methods.totalSupply().call(),
   };
-  console.log('New token', newTokenInfo);
+  console.log('New token through upgrade proxy', newTokenInfo);
+  assert(upgradeProxyInfo.implementation === newTokenImpl.address, 'Safety check that the upgrade proxy is correctly wired.');
 
   const tokenSwapInfo = {
     address: tokenSwap.address,
@@ -156,6 +205,15 @@ async function deploy(): Promise<void> {
     balance: await oldToken.methods.balanceOf(faucet.address).call(),
   };
   console.log('Faucet', faucetInfo);
+
+  const stakingInfo = {
+    address: staking.address,
+    token: await staking.methods.token().call(),
+    stakingTime: await staking.methods.stakingTime().call(),
+    stakingAmount: await staking.methods.stakingAmount().call(),
+    oracle: await staking.methods.stakePriceOracle().call(),
+  };
+  console.log('Staking', stakingInfo);
 }
 
 // Top level async is not supported yet, so we need to wrap this in a function

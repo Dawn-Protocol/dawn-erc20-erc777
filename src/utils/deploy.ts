@@ -104,7 +104,10 @@ export async function deployContract(id: string, _Contract: any, parameters: any
   console.log(`Starting to deploy contract ${id}, constructor`, parameters, 'balance left', ethBalance, 'ETH');
   const p = _Contract.new(...parameters, txParams);
   const deployed = await p;
-  console.log(`Deployed ${id} at ${deployed.address}`);
+  // console.log(deployed);
+  // https://stackoverflow.com/questions/34743960/is-there-a-way-to-round-to-2-decimals-in-a-template-string
+  const gasUsed = (deployed.deployment.transactionReceipt.cumulativeGasUsed / 1000).toFixed(2);
+  console.log(`Deployed ${id} at ${deployed.address} gas used ${gasUsed}k`);
 
   return _Contract.at(deployed.address);
 }

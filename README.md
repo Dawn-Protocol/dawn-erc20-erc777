@@ -40,7 +40,7 @@ This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](http
 
 # Overview
 
-Below is an narrative introduction how contracts are deployed and engineered.
+Below is a narrative introduction to the Dawn token and related smart contracts.
 
 # Base packages
 
@@ -54,7 +54,7 @@ with the same name from two different packages, so all contracts are done using 
 
 ## Token
 
-Token is based on OpenZeppelin upgradeable ERC-20 contract.
+The token is based on [OpenZeppelin upgradeable ERC-20 contract].
 
 ### Token deployment
 
@@ -94,9 +94,9 @@ The token swap contract is written from the scratch for this swap.
 
 ## Staking
 
-A staking contracts allows users to lock up a predefined amount of tokens for a predefined time.
+A staking contract allows users to lock up a predefined amount of tokens for a predefined time.
 This is the simplest form of staking, allowing FirstBlood and other eSports actors
-to take the first steps towards a more decentralized ecosystem over the time.
+to take the first steps towards a more decentralized ecosystem over time.
 
 ### Staking deployment
 
@@ -255,7 +255,7 @@ npx eslint --ext .ts tests/ src/
 
 # Deploying
 
-## Goerli testnet
+## Testnet
 
 This will deploy a mock of old token, a mock of new token, a token swap and
 a testnet token faucet contracts.
@@ -268,20 +268,26 @@ openssl rand -hex 32
 
 2. [Create account on Infura and get API key for goearly]().
 
-3. Create a config file `secrets/goearly.env.ini`
+3. Create a config file `secrets/goearly.env.ini`. For variable documentation see [deployTestnet.js](src/scripts/deployTestnet.js).
 
 ```ini
-privateKeyHex = "..."
+deployerPrivateKeyHex = "..."
 
-signerKeyHex = "..."
+signerPrivateKeyHex = "..."
+
+oraclePrivateKeyHex = "..."
+
+tokenOwnerPrivateKeyHex = "..."
 
 infuraProjectId = "..."
+
+
 ```
 
 4. Get the address for the deployment account by running the deployer without ETH
 
 ```sh
-npx ts-node src/scripts/deployGoerli.ts
+npx ts-node src/scripts/deployTestnet.ts
 ```
 
 5. [Visit faucet to get testnet eth on the deployment account](https://goerli-faucet.slock.it/)
@@ -289,35 +295,47 @@ npx ts-node src/scripts/deployGoerli.ts
 6. Deploy now with having some gas money
 
 ```sh
-npx ts-node src/scripts/deployGoerli.ts
+npx ts-node src/scripts/deployTestnet.ts
 ```
 # Goerli deployment
 
 Here is a sample deployment in Goerli testnet
 
 ```
-  Legacy token {
-    address: '0x5bad7e8039C11840fDad4a3e34e1Aa0Fc43D1De4',
-    name: 'Mock of old token',
-    symbol: 'OLD',
-    supply: '93468683899196345527500000'
-  }
-  New token {
-    address: '0x886263505cabBE7312aA3DAEE3d92Fa7D3d0779a',
-    name: 'Mock of new token',
-    symbol: 'NEW',
-    supply: '93468683899196345527500000'
-  }
-  Token swap {
-    address: '0xb41b52f8cac2DB0841528fefa299aDb86CB83312',
-    tokensLeftToSwap: '5000000000000000000000',
-    signerKey: '39cc67e7dbf2c162095bfc058f4b7ba2f9aa7ec006f9e28dc438c07662a3bb41'
-  }
-  Faucet {
-    address: '0x57853504653e2250fc43AF90C3a5A75CfbF3F133',
-    faucetAmount: '3000000000000000000',
-    balance: '5000000000000000000000'
-  }
+Legacy token {
+  address: '0xf049e669FA12BfA9194F36e29346a7e395457F14',
+  name: 'Mock of old token',
+  symbol: 'OLD',
+  supply: '93468683899196345527500000'
+}
+Upgrade proxy for new token {
+  address: '0x5Ab46c99F64Be2504F4f986eF82922de70Ac7dE6',
+  admin: '0xbe48960593b6468AF98474996656D2925E1825df',
+  implementation: '0xa8f87748ab19a2F6A60F55e7269Fd3E81475A0C3'
+}
+New token through upgrade proxy {
+  name: 'Mock of new token',
+  address: '0x5Ab46c99F64Be2504F4f986eF82922de70Ac7dE6',
+  symbol: 'NEW',
+  supply: '93468683899196345527500000'
+}
+Token swap {
+  address: '0x272885727B6bb2371Ec288Ad764Dc7404bA36541',
+  tokensLeftToSwap: '5000000000000000000000',
+  signerKey: '39cc67e7dbf2c162095bfc058f4b7ba2f9aa7ec006f9e28dc438c07662a3bb41'
+}
+Faucet {
+  address: '0x79F3Abe6feCe9Ab8bbdCabA84c986094788295d2',
+  faucetAmount: '3000000000000000000',
+  balance: '5000000000000000000000'
+}
+Staking {
+  address: '0x8aaE16B4771D55f0280DF87CbaA89eD913875806',
+  token: '0x5Ab46c99F64Be2504F4f986eF82922de70Ac7dE6',
+  stakingTime: '86400',
+  stakingAmount: '2500000000000000000',
+  oracle: '0x1FCE2cf3D1a1BC980f85FEf6bF3EE17DD6eBcC8D'
+}
 ```
 # Production deployment strategy
 
