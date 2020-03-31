@@ -1,5 +1,11 @@
 
 
+# Welcome to the New Begining
+
+<img src="https://i.postimg.cc/4dvwcKJ9/logo.png" width="340">
+
+#### Dawn is a global, self-governed, and open-sourced protocol that empowers and rewards gamers.</br>
+
 This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](https://firstblood.io).
 
 # Introduction
