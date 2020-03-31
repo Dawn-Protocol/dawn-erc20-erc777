@@ -347,26 +347,32 @@ Two different multi-signature wallets are needed.
 
 * [Due to the fact how Proxy contract works, these two addresses cannot be the same wallet](https://docs.openzeppelin.com/upgrades/2.7/proxies#transparent-proxies-and-function-clashes)
 
+# Slither
+
+Slither automated security audits.
+
+Install
+
+```sh
+python3 -m venv venv
+source venv/bin/active
+pip install slither-analyzer
+```
+
+Running
+
+```
+export SOLC_VERSION=0.5.16
+slither --solc ./dockerized-solc.sh .
+```
+
+# Audits
+
+* [The latest audit report for OpenZeppelin SDK contracts](https://medium.com/nomic-labs-blog/zeppelinos-smart-contracts-audit-iv-a52987973b88)
+
 # Other
 
 * [More about OpenZeppelin smart contract upgrade pattern](https://docs.openzeppelin.com/upgrades/2.7/)
 
 * [Truffle and TypeChain example](https://github.com/ethereum-ts/truffle-typechain-example) (a legacy reference - was a lot of pain and both Truffle and TypeChain have now been removed)
 
-# TODO
-
-* [Open issue](https://github.com/ethereum-ts/truffle-typings/issues/17) How to make [power-assert](https://github.com/power-assert-js/espower-typescript) to work with [truffle-typings](https://www.npmjs.com/package/truffle-typings),
-so that easy `assert()` could be used instead of expect.
-
-* Why ganache-core pulled in git hooks for husky
-
-* [Why is Visual Studio Code Solidity extension using solc 0.6](https://github.com/juanfranblanco/vscode-solidity/issues/163)
-
-```#!/bin/sh
-# husky
-
-# Hook created by Husky v4.0.10 (https://github.com/typicode/husky#readme)
-#   At: 3/10/2020, 5:17:30 PM
-#   From: /Users/mikkoohtamaa/code/dawn/dawn-erc20/node_modules/ganache-core/node_modules/husky (https://github.com/typicode/husky#readme)
-#   With: npm
-```
