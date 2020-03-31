@@ -5,41 +5,13 @@
  */
 pragma solidity ^0.5.0;
 
-/**
- * Overflow aware uint math functions.
- *
- * Inspired by https://github.com/MakerDAO/maker-otc/blob/master/contracts/simple_market.sol
- */
-contract SafeMath {
-
-  function safeMul(uint a, uint b) public pure returns (uint) {
-    uint c = a * b;
-    _assert(a == 0 || c / a == b);
-    return c;
-  }
-
-  function safeSub(uint a, uint b) public pure returns (uint) {
-    _assert(b <= a);
-    return a - b;
-  }
-
-  function safeAdd(uint a, uint b) public pure returns (uint) {
-    uint c = a + b;
-    _assert(c>=a && c>=b);
-    return c;
-  }
-
-  function _assert(bool assertion) internal pure {
-    if (!assertion) revert("legacy assert");
-  }
-}
 
 /**
  * ERC 20 token
  *
  * https://github.com/ethereum/EIPs/issues/20
  */
-contract Token {
+contract ILegacyToken {
 
     /// @return total amount of tokens
     // function totalSupply() public view returns (uint256 supply);
@@ -82,7 +54,7 @@ contract Token {
  *
  * https://github.com/ethereum/EIPs/issues/20
  */
-contract StandardToken is Token {
+contract LegacyStandardToken is ILegacyToken {
 
     /**
      * Reviewed:
@@ -143,7 +115,7 @@ contract StandardToken is Token {
  *
  *
  */
-contract FirstBloodTokenMock is StandardToken, SafeMath {
+contract FirstBloodTokenMock is LegacyStandardToken {
 
     uint public decimals = 18;
     string public name;
