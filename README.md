@@ -374,9 +374,12 @@ slither --solc ./dockerized-solc.sh .
 
 * [The latest audit report for OpenZeppelin SDK contracts](https://medium.com/nomic-labs-blog/zeppelinos-smart-contracts-audit-iv-a52987973b88)
 
+# Ongoing
+
+* [Slither crashes on this repo](https://github.com/crytic/slither/issues/427)
+
 # Other
 
 * [More about OpenZeppelin smart contract upgrade pattern](https://docs.openzeppelin.com/upgrades/2.7/)
 
 * [Truffle and TypeChain example](https://github.com/ethereum-ts/truffle-typechain-example) (a legacy reference - was a lot of pain and both Truffle and TypeChain have now been removed)
-
