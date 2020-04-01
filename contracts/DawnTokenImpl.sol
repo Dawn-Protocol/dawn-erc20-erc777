@@ -12,6 +12,14 @@ import './Recoverable.sol';
  *
  * Needs to be set up behind a proxy contract.
  *
+ * We use a modified ERC-777 contract, as otherwise we cannot
+ * override send, transfer and transferFrom from the parent contract.
+ * EVM currently does not allow overriding of external functions.
+ * Changing the call signature for the required functions
+ * was the only change done on the contract - otherwise
+ * it is a vanilla copy of
+ * https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/bf0277b398c0454276bd8caf0ee35efaf46e686b/contracts/token/ERC777/ERC777.sol
+ *
  */
 contract DawnTokenImpl is Initializable, ERC777Overridable, Recoverable, Pausable {
 
@@ -24,6 +32,8 @@ contract DawnTokenImpl is Initializable, ERC777Overridable, Recoverable, Pausabl
    * @param _symbol Token symbol
    */
   function initialize(address sender, address manager, string memory _name, string memory _symbol) public initializer  {
+
+    require(manager != address(0x0), "Bad manager");
 
     // We set up an ERC-777 token without any default operators
     address[] memory noAddresses = new address[](0);
@@ -41,7 +51,7 @@ contract DawnTokenImpl is Initializable, ERC777Overridable, Recoverable, Pausabl
 
     // Mint the initial supply
     // https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/master/contracts/token/ERC777/ERC777.sol#L315
-    _mint(address(0x0), manager, INITIAL_SUPPLY, emptyBytes, emptyBytes);
+    _mint(manager, manager, INITIAL_SUPPLY, emptyBytes, emptyBytes);
 
     // Set the manager address as the pauser
     _addPauser(manager);  // Set the managing multisig wallet as the pauser
@@ -69,6 +79,5 @@ contract DawnTokenImpl is Initializable, ERC777Overridable, Recoverable, Pausabl
   function transferFrom(address from, address to, uint256 value) external whenNotPaused returns (bool) {
     return transferFromInternal(from, to, value);
   }
-
 
 }

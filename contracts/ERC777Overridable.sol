@@ -1,3 +1,5 @@
+// See comments in DawnTokenImpl.sold
+
 pragma solidity ^0.5.0;
 
 import "@openzeppelin/upgrades/contracts/Initializable.sol";
