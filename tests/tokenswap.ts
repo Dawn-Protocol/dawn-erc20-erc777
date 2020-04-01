@@ -82,7 +82,7 @@ beforeEach(async () => {
   tokenSwap = await TokenSwap.new({ from: deployer });
 
   // Use the Initializer pattern to bootstrap the contract
-  await tokenSwap.initializeTokenSwap(deployer, owner, signer, oldToken.address, newToken.address, BURN_ADDRESS, { from: deployer });
+  await tokenSwap.initialize(owner, signer, oldToken.address, newToken.address, BURN_ADDRESS, { from: deployer });
 
   newToken.approve(tokenSwap.address, SWAP_BUDGET, { from: owner });
 });

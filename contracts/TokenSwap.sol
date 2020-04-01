@@ -46,25 +46,21 @@ contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
    *
    * @dev Using initializeTokenSwap() function name to avoid conflicts.
    */
-  function initializeTokenSwap(address sender, address owner, address signer, address _oldToken, address _newToken, address _burnDestination)
+  function initialize(address owner, address signer, address _oldToken, address _newToken, address _burnDestination)
     public initializer {
 
-    Pausable.initialize(sender);
-    Ownable.initialize(sender);
+    // Deployer account holds temporary ownership until the setup is done
+    Ownable.initialize(_msgSender());
+    setBurnDestination(_burnDestination);
+    setSignerAddress(signer);
+
+    Pausable.initialize(owner);
+    _transferOwnership(owner);
 
     oldToken = IERC20(_oldToken);
     newToken = IERC20(_newToken);
     require(oldToken.totalSupply() == newToken.totalSupply(), "Cannot create swap, old and new token supply differ");
 
-    setBurnDestination(_burnDestination);
-    setSignerAddress(signer);
-
-    // Get rid of deployment account for Pausable
-    _addPauser(owner);
-    _removePauser(msg.sender);
-
-    // Get rid of deployment account for Ownable
-    _transferOwnership(owner);
   }
 
   function _swap(address whom, uint amount) internal {
