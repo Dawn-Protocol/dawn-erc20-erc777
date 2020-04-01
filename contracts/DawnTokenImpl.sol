@@ -81,4 +81,8 @@ contract DawnTokenImpl is Initializable, ERC777Overridable, Recoverable, Pausabl
     return transferFromInternal(from, to, value);
   }
 
+  function burn(uint256 amount, bytes calldata data) external whenNotPaused {
+    burnInternal(amount, data);
+  }
+
 }

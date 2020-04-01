@@ -84,3 +84,15 @@ test('Token cannot be send to 0x0 null address by accident', async () => {
     await token.transfer(constants.ZERO_ADDRESS, amount, { from: owner });
   });
 });
+
+
+test('Token has an explicit burn action', async () => {
+  const amount = new BN('1e18'); // Transfer 1 whole token
+  await token.transfer(user2, amount, { from: owner });
+  const calldata = Buffer.from('');
+  await token.burn(amount, calldata, { from: user2 });
+  // User burned all of his tokens
+  assert((await token.balanceOf(user2)).toString() === '0');
+  // Total supply went down
+  assert((await token.totalSupply()).toString() === TOKEN_1ST_TOTAL_SUPPLY.sub(amount).toString());
+});
