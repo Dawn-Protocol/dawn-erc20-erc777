@@ -227,14 +227,14 @@ contract ERC777Overridable is Initializable, Context, IERC777, IERC20 {
      *
      * Emits {Sent} and {Transfer} events.
      */
-    function operatorSend(
+    function operatorSendInternal(
         address sender,
         address recipient,
         uint256 amount,
-        bytes calldata data,
-        bytes calldata operatorData
+        bytes memory data,
+        bytes memory operatorData
     )
-    external
+    internal
     {
         require(isOperatorFor(_msgSender(), sender), "ERC777: caller is not an operator for holder");
         _send(_msgSender(), sender, recipient, amount, data, operatorData, true);
@@ -245,7 +245,7 @@ contract ERC777Overridable is Initializable, Context, IERC777, IERC20 {
      *
      * Emits {Burned} and {Transfer} events.
      */
-    function operatorBurn(address account, uint256 amount, bytes calldata data, bytes calldata operatorData) external {
+    function operatorBurnInternal(address account, uint256 amount, bytes memory data, bytes memory operatorData) internal {
         require(isOperatorFor(_msgSender(), account), "ERC777: caller is not an operator for holder");
         _burn(_msgSender(), account, amount, data, operatorData);
     }

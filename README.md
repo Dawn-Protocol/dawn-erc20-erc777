@@ -226,9 +226,20 @@ launch.json example:
 }
 ```
 
-## Integrating token testing in frontend and backend
+# Conformance suite
 
-If you want to use Mock token and Ganache inside your frontend/backend development tests.
+In [conformance folder](./conformance) we have direclty lifted
+[OpenZeppelin ERC-777 test suite](https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/master/test/token/ERC777/ERC777.test.js).
+These Truffle tests will test against our proxy token to see that the token does what
+
+Because tests are Truffle, Chai and Mocha, they do not run under our normal test runner.
+Porting 172 tests for Jest would be little bit too much work.
+Thus, the tests are put to a separate folder.
+You can run them with Truffle by:
+
+```sh
+truffle test conformance/ERC777.js
+```
 
 # Linting
 

@@ -11,7 +11,7 @@ import './Recoverable.sol';
  *
  * Needs to be set up behind a proxy contract.
  *
- * We use a modified ERC-777 contract, as otherwise we cannot
+ * We use a modified ERC777 contract, as otherwise we cannot
  * override send, transfer and transferFrom from the parent contract.
  * EVM currently does not allow overriding of external functions.
  * Changing the call signature for the required functions
@@ -57,6 +57,7 @@ contract DawnTokenImpl is ERC777Overridable, Recoverable, Pausable {
     // https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/master/contracts/token/ERC777/ERC777.sol#L315
 
     _mint(manager, manager, INITIAL_SUPPLY, emptyBytes, emptyBytes);
+
   }
 
   //
@@ -78,6 +79,20 @@ contract DawnTokenImpl is ERC777Overridable, Recoverable, Pausable {
 
   function burn(uint256 amount, bytes calldata data) external whenNotPaused {
     burnInternal(amount, data);
+  }
+
+  function operatorSend(
+    address sender,
+    address recipient,
+    uint256 amount,
+    bytes calldata data,
+    bytes calldata operatorData
+  ) external whenNotPaused {
+    operatorSendInternal(sender, recipient, amount, data, operatorData);
+  }
+
+  function operatorBurn(address account, uint256 amount, bytes calldata data, bytes calldata operatorData) external whenNotPaused {
+    operatorBurnInternal(account, amount, data, operatorData);
   }
 
 }
