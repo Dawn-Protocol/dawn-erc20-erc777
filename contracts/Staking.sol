@@ -18,7 +18,7 @@ import './Recoverable.sol';
  * Then the user can get these events from logs and unstake by id.
  *
  */
-contract Staking is Initializable, Pausable, Ownable, Recoverable {
+contract Staking is Initializable, Pausable, Recoverable {
 
   // A single staking event
   struct Stake {
@@ -75,14 +75,27 @@ contract Staking is Initializable, Pausable, Ownable, Recoverable {
   // Mew stake price oracle has been set
   event OracleChanged(address newOracle);
 
-  // We use Zeppelin initializer pattern here for the consistence,
-  // even though the contract is not going to be an upgrade proxy
-  function initializeStaking(address sender, address _owner, address _token, uint _amount, uint _time, address _oracle) public initializer {
+
+  /**
+   * Set up the staking smart contract
+   *
+   * We use Zeppelin initializer pattern here for the consistence,
+   * even though the contract is not going to be an upgrade proxy
+   *
+   * @param sender Sender in the Initializer pattern
+   * @param _owner The owning multisig for pausable action and resetting oracle
+   * @param _token Which token we will stake
+   * @param _amount Initial amount how many tokens are staked at once
+   * @param _time Initial duration of the stake in seconds
+   * @param _oracle Address of the initial parameters oracle
+   */
+  function initialize(address sender, address _owner, address _token, uint _amount, uint _time, address _oracle) public initializer {
+
+    // Call parent initializers
+    Recoverable.initialize(sender);
+    Pausable.initialize(sender);
 
     token = IERC20(_token);
-
-    Pausable.initialize(sender);
-    Ownable.initialize(sender);
 
     // Initial parameters are set by the owner,
     // before we give the control to the real oracle
