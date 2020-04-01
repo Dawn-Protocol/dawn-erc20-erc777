@@ -41,6 +41,7 @@ const STAKE_DURATION_2 = 48 * 60 * 60;
 const DawnTokenImpl = contract.fromArtifact('DawnTokenImpl');
 const Staking = contract.fromArtifact('Staking');
 const DawnTokenProxy = contract.fromArtifact('DawnTokenProxy'); // AdminUpgradeabilityProxy subclass
+const FirstBloodTokenMock = contract.fromArtifact('FirstBloodTokenMock'); // Legacy ERC-20
 
 let proxyContract = null; // DawnTokenProxy depoyment, AdminUpgradeabilityProxy
 let newTokenImpl = null; // ERC20Pausable
@@ -186,10 +187,9 @@ test('User can stake their tokens', async () => {
 test('User can unstake their tokens', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
-  // User approves token for the swap
-  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
   // This will create staking id 1
-  await staking.stake({ from: user });
+  await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user });
+  // Time travel to unlock
   time.increase(STAKE_DURATION + 1);
   const receipt = await staking.unstake(1, { from: user });
   // Check events are right
@@ -215,10 +215,8 @@ test('User can unstake their tokens', async () => {
 test('User cannot unstake their tokens too soon', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE, { from: owner });
-  // User approves token for the swap
-  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
   // This will create staking id 1
-  await staking.stake({ from: user });
+  await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user });
   time.increase(STAKE_DURATION - 2);
   // Random users cannot reset the oracle
   await expectRevert(
@@ -231,12 +229,11 @@ test('User cannot unstake their tokens too soon', async () => {
 test('Users cannot stake or unstake while paused', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
-  // User approves token for the swap
-  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
   // Set the paused state
   await staking.pause({ from: owner });
+  // Cannot stake while paused
   await expectRevert(
-    staking.stake({ from: user }),
+    newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user }),
     'Pausable: paused',
   );
   // Random users cannot reset the oracle
@@ -246,30 +243,16 @@ test('Users cannot stake or unstake while paused', async () => {
   );
   // Unpause and we can stake again
   await staking.unpause({ from: owner });
-  await staking.stake({ from: user });
+  await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user });
 });
 
 
-test('User need enough allowance to stake', async () => {
+test('User need to send the correct amount to stake', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
-  // User approves token for the swap
-  await newToken.approve(staking.address, STAKE_PRICE / 2, { from: user });
   await expectRevert(
-    staking.stake({ from: user }),
-    'You need to first approve() enough tokens to stake',
-  );
-});
-
-
-test('User need enough tokens to stake', async () => {
-  // Give user some tokens to stake
-  await newToken.transfer(user, STAKE_PRICE - 1, { from: owner });
-  // User approves token for the swap
-  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
-  await expectRevert(
-    staking.stake({ from: user }),
-    'You do not have enough tokens to stake in your wallet',
+    newToken.send(staking.address, STAKE_PRICE / 2, Buffer.from(''), { from: user }),
+    'Wrong staking amount',
   );
 });
 
@@ -277,15 +260,13 @@ test('User need enough tokens to stake', async () => {
 test('Two different users can stake on different staking periods', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE, { from: owner });
-  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
   await newToken.transfer(user2, STAKE_PRICE_2, { from: owner });
-  await newToken.approve(staking.address, STAKE_PRICE_2, { from: user2 });
   // User 1 stakes
-  await staking.stake({ from: user });
+  await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user });
   time.increase(5);
   // User 2 stakes
   await staking.setStakingParameters(STAKE_PRICE_2, STAKE_DURATION_2, { from: oracle });
-  await staking.stake({ from: user2 });
+  await newToken.send(staking.address, STAKE_PRICE_2, Buffer.from(''), { from: user2 });
   // Check state
   assert((await staking.currentlyStaked()).toNumber() === STAKE_PRICE + STAKE_PRICE_2);
   assert((await staking.totalStaked()).toNumber() === STAKE_PRICE + STAKE_PRICE_2);
@@ -323,12 +304,10 @@ test('Two different users can stake on different staking periods', async () => {
 test('User cannot unstake twice', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE, { from: owner });
-  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
   await newToken.transfer(user2, STAKE_PRICE_2, { from: owner });
-  await newToken.approve(staking.address, STAKE_PRICE_2, { from: user2 });
   // Add enough balance for 2 unstakes
-  await staking.stake({ from: user });
-  await staking.stake({ from: user2 });
+  await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user });
+  await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user2 });
   await time.increase(STAKE_DURATION_2);
   // User 1 cannot unstake stwice
   await staking.unstake(1, { from: user });
@@ -342,12 +321,11 @@ test('User cannot unstake twice', async () => {
 test('We can recover wrong tokens send to the contract', async () => {
   // Create an independent tthird token,
   // albeit recovery works with legacy and new tokens as well
-  const thirdToken = await DawnTokenImpl.new(thirdTokenOwner, {
+  const thirdToken = await FirstBloodTokenMock.new(deployer, 'OLD', 'OLD', {
     from: deployer,
   });
-  await thirdToken.initialize(deployer, thirdTokenOwner, 'Third Token', '3RD');
   const amount = new BN('100');
-  await thirdToken.transfer(user2, amount, { from: thirdTokenOwner });
+  await thirdToken.transfer(user2, amount, { from: deployer });
   // Accidentally sending tokens to the smart contract
   await thirdToken.transfer(staking.address, amount, { from: user2 });
   let bal = await thirdToken.balanceOf(staking.address);

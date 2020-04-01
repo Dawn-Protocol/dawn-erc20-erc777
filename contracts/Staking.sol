@@ -19,6 +19,9 @@ import './Recoverable.sol';
  * For each stake action, we give an unique id and generate an event.
  * Then the user can get these events from logs and unstake by id.
  *
+ * Staking happens by sending the correct amonut of tokens
+ * to the contract using ERC-777 send().
+ *
  */
 contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
 
