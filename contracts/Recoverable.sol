@@ -18,7 +18,7 @@ import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol
 contract Recoverable is Ownable {
 
   function initialize(address sender) public initializer {
-    Ownable.initialize(sender);
+    super.initialize(sender);
   }
 
   /// @dev This will be invoked by the owner, when owner wants to rescue tokens

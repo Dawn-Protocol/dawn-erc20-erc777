@@ -8,6 +8,7 @@ import { sha3, soliditySha3 } from 'web3-utils';
 import {
   BN, // Big Number support https://github.com/indutny/bn.js
   constants, // Common constants, like the zero address and largest integers
+  singletons,
 } from '@openzeppelin/test-helpers';
 import { signAddress } from '../src/utils/sign';
 
@@ -53,6 +54,10 @@ function signTestAddress(addr: string): { signature: string; v: string; r: strin
 }
 
 beforeEach(async () => {
+  // We need to setup the ERC-1820 registry on our test chain,
+  // or otherwise ERC-777 initializer will revert()
+  await singletons.ERC1820Registry(deployer);
+
   // Here we refer the token contract directly without going through the proxy
   newTokenImpl = await DawnTokenImpl.new({ from: deployer });
 

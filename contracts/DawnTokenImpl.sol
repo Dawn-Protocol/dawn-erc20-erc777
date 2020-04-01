@@ -33,11 +33,11 @@ contract DawnTokenImpl is Initializable, ERC777Overridable, Recoverable, Pausabl
    */
   function initialize(address sender, address manager, string memory _name, string memory _symbol) public initializer  {
 
-    require(manager != address(0x0), "Bad manager");
-
     // We set up an ERC-777 token without any default operators
+
     address[] memory noAddresses = new address[](0);
     bytes memory emptyBytes = new bytes(0);
+
     ERC777Overridable.initialize(_name, _symbol, noAddresses);
 
     // Initializes owner() for recoverTokens
@@ -51,6 +51,7 @@ contract DawnTokenImpl is Initializable, ERC777Overridable, Recoverable, Pausabl
 
     // Mint the initial supply
     // https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/master/contracts/token/ERC777/ERC777.sol#L315
+
     _mint(manager, manager, INITIAL_SUPPLY, emptyBytes, emptyBytes);
 
     // Set the manager address as the pauser

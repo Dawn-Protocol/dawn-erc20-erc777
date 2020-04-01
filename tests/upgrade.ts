@@ -6,6 +6,7 @@ import { accounts, contract } from '@openzeppelin/test-environment';
 import { ZWeb3 } from '@openzeppelin/upgrades';
 import {
   BN, // Big Number support
+  singletons,
 } from '@openzeppelin/test-helpers';
 
 import assert = require('assert');
@@ -53,6 +54,10 @@ beforeEach(async () => {
   // Fix global usage of ZWeb3.provider in Proxy.admin() call
   // https://github.com/OpenZeppelin/openzeppelin-sdk/issues/1504
   ZWeb3.initialize(DawnTokenImpl.web3.currentProvider);
+
+  // We need to setup the ERC-1820 registry on our test chain,
+  // or otherwise ERC-777 initializer will revert()
+  await singletons.ERC1820Registry(deployer);
 
   // This is the first implementation contract - v1 for the smart contarct code.
   // Here we refer the token contract directly without going through the proxy.

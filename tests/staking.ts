@@ -8,6 +8,7 @@ import {
   expectEvent, // https://docs.openzeppelin.com/test-helpers/0.5/api#expect-event
   BN, // Big Number support https://github.com/indutny/bn.js
   time, // https://docs.openzeppelin.com/test-helpers/0.5/api#latest
+  singletons,
 } from '@openzeppelin/test-helpers';
 
 import assert = require('assert');
@@ -47,6 +48,10 @@ let staking = null; // Staking.sol
 
 
 beforeEach(async () => {
+  // We need to setup the ERC-1820 registry on our test chain,
+  // or otherwise ERC-777 initializer will revert()
+  await singletons.ERC1820Registry(deployer);
+
   // Here we refer the token contract directly without going through the proxy
   newTokenImpl = await DawnTokenImpl.new({ from: deployer });
 

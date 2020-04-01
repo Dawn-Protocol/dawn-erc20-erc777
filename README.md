@@ -376,15 +376,11 @@ slither --solc ./dockerized-solc.sh .
 
 * [OpenZeppelin UpgradeProxy in other well-known projects and audits](https://forum.openzeppelin.com/t/openzeppelin-usage-in-audited-well-known-projects/2556/8?u=miohtama)
 
-# Ongoing
-
-* [Slither crashes on this repo](https://github.com/crytic/slither/issues/427)
+# Other
 
 * [ERC-777 example](https://forum.openzeppelin.com/t/simple-erc777-token-example/746)
 
 * [ERC-777 narrative explanation](https://medium.com/coinmonks/erc-777-a-new-advanced-token-standard-c841788ab3cb)
-
-# Other
 
 * [More about OpenZeppelin smart contract upgrade pattern](https://docs.openzeppelin.com/upgrades/2.7/)
 

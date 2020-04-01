@@ -6,6 +6,7 @@ import { accounts, contract } from '@openzeppelin/test-environment';
 import {
   BN, // Big Number support
   constants, // Common constants, like the zero address and largest integers
+  singletons,
 } from '@openzeppelin/test-helpers';
 
 import assert = require('assert');
@@ -25,8 +26,11 @@ const DawnTokenImpl = contract.fromArtifact('DawnTokenImpl');
 let token = null; // ERC20Pausable
 
 beforeEach(async () => {
-  // Here we refer the token contract directly without going through the proxy
+  // We need to setup the ERC-1820 registry on our test chain,
+  // or otherwise ERC-777 initializer will revert()
+  await singletons.ERC1820Registry(deployer);
 
+  // Here we refer the token contract directly without going through the proxy
   token = await DawnTokenImpl.new({ from: deployer });
 
   // Use upgrade initialiser pattern to set up initial value
