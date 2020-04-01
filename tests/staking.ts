@@ -23,7 +23,6 @@ const [
   oracle, // Price resetter
   user, // User staking tokens
   user2, // Random dude who wants play with tokens
-  thirdTokenOwner, // Needed to test interaction with third party tokens
 ] = accounts;
 
 // Stake 1000 tokens once
