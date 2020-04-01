@@ -65,7 +65,7 @@ beforeEach(async () => {
   token = await DawnTokenImpl.at(proxyContract.address);
 
   // This is the constructor in OpenZeppelin upgradeable pattern
-  await token.initialize(deployer, owner, 'New Token', 'NEW');
+  await token.initializeDawn(owner, 'New Token', 'NEW');
 });
 
 test('Token contract is not payable', async () => {

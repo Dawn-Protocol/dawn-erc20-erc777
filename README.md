@@ -15,26 +15,34 @@ This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](http
 
 * DAWN can be used on FirstBlood platform and other services as a utility token: method of payment, staking, etc.
 
-* Token complies with EIP-20 standard (former ERC-20 proposal).
+* Token complies with [EIP-20 standard](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md) (former ERC-20 candidate).
   The original 1ST token was created at the time when ERC-20 process was still about to start,
   so some implementation details are different.
   This makes it easier to use token in various decentralised finance services like decentralised exchanages (DEXes)
   and lending pools.
 
-* Token smart contract supports recovering ether and tokens accidentally send into it.
+* Token complies with [EIP-777 standard](https://eips.ethereum.org/EIPS/eip-777) (former ERC-777 candidate).
+  This standard defines a new way to interact with a token contract while remaining backward compatible with ERC20.
+
+* Token smart contract supports [recovering tokens accidentally send into it](./contracts/Recoverable.sol).
 
 * The token is upgradeable through [OpenZeppelin proxy pattern](https://docs.openzeppelin.com/learn/upgrading-smart-contracts)
   ([actual contracts](https://github.com/OpenZeppelin/openzeppelin-sdk/tree/master/packages/lib/contracts/upgradeability)).
 
-* Token implements transfer pause that will be activated if and when the tokens are migrated to a new network.
+* The token implements a pause functionality that will be activated if and when the tokens are migrated to a new network.
   This is implemented using [OpenZeppelin pausable trait](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20Pausable.sol).
-  This is similar what EOS did with their genesis block.
+  This is similar what EOS did with their genesis block. Furthermore, the pause can be activated
+  in the case there is a large exchange hack and a large token supply is lost,
+  so that other exchanges have time to update their blacklists.
 
-* Token smart contract supports burning of tokens to allow new utility models in the future.
+* EIP-777 standard supports burning of tokens to allow new utility models in the future.
+
+* EIP-777 standard allows better token UX when integrating with decentralised finance smart contracts like
+  lending pools.
 
 # Software required
 
-* solc 0.5.16
+* solc 0.5.16 (0.5.16+commit.9c3226ce.Emscripten.clang)
 
 * Node 0.12
 
@@ -102,13 +110,21 @@ A staking contract allows users to lock up a predefined amount of tokens for a p
 This is the simplest form of staking, allowing FirstBlood and other eSports actors
 to take the first steps towards a more decentralized ecosystem over time.
 
+Staking happens by doing ERC-777 send() in to the staking contract.
+The send amount, or price, is predefined, but can be adjusted over a
+time by an oracle. Likewise, the lock period is predefined but
+can be adjusted.
+
+To unstake, the user must manually call `unstake()` for their
+previous stake id.
+
 ### Staking deployment
 
 ![staking deployment](docs/deployment/staking.png)
 
 * Staking contract is in-house, written from the scratch
 
-* Users can `stake()` their tokens and get an id for their stake
+* Users can stake their tokens and get an id for their stake
 
 * These ids can be parsed fron Ethereum event logs. A server-side component we call
   cashier reads these events and can perform actions on user accounts based on them.

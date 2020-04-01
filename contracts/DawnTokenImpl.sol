@@ -21,30 +21,35 @@ import './Recoverable.sol';
  * https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/bf0277b398c0454276bd8caf0ee35efaf46e686b/contracts/token/ERC777/ERC777.sol
  *
  */
-contract DawnTokenImpl is Initializable, ERC777Overridable, Recoverable, Pausable {
+contract DawnTokenImpl is ERC777Overridable, Recoverable, Pausable {
 
   /**
    * Create the first Dawn token.
    *
-   * @param sender The sender in Initizable pattern
+   * We are using a function name `initializeDawn` instead of `initialize`
+   * as otherwise we get a function override name clash because same number of parameters.
+   * that are different type. The web3.js code
+   * will try to call the initializer() of a wrong signature and this is the error:
+   *
+   * expected array value (arg="defaultOperators", coderType="array", value="NEW")
+   *
    * @param manager The address that is going ot control Pausable functionality and also receive the initally minted tokens
    * @param _name Token name
    * @param _symbol Token symbol
    */
-  function initialize(address sender, address manager, string memory _name, string memory _symbol) public initializer  {
+  function initializeDawn(address manager, string memory _name, string memory _symbol) public initializer  {
 
     // We set up an ERC-777 token without any default operators
-
     address[] memory noAddresses = new address[](0);
     bytes memory emptyBytes = new bytes(0);
 
     ERC777Overridable.initialize(_name, _symbol, noAddresses);
 
     // Initializes owner() for recoverTokens
-    Recoverable.initialize(sender);
+    Recoverable.initialize(manager);
 
     // Initializes pauser
-    Pausable.initialize(sender);
+    Pausable.initialize(manager);
 
     // Same as in 1ST token
     uint INITIAL_SUPPLY = 93468683899196345527500000;
@@ -54,14 +59,6 @@ contract DawnTokenImpl is Initializable, ERC777Overridable, Recoverable, Pausabl
 
     _mint(manager, manager, INITIAL_SUPPLY, emptyBytes, emptyBytes);
 
-    // Set the manager address as the pauser
-    _addPauser(manager);  // Set the managing multisig wallet as the pauser
-    _removePauser(sender);  // Remove the deployment account as the pauser
-
-    // Ownable always initializes the first owner to sender,
-    // move to manager.
-    // Set who can recover ETH and tokens send to this smart contract.
-    _transferOwnership(manager);
   }
 
   //

@@ -76,7 +76,7 @@ beforeEach(async () => {
   // This is the constructor in OpenZeppelin upgradeable pattern
   // Route all token calls to go through the proxy contract
   newToken = await DawnTokenImpl.at(proxyContract.address);
-  await newToken.initialize(deployer, owner, 'New Token', 'NEW');
+  await newToken.initializeDawn(owner, 'New Token', 'NEW');
 
   oldToken = await FirstBloodTokenMock.new(owner, 'Old Token', 'OLD', { from: deployer });
   tokenSwap = await TokenSwap.new({ from: deployer });
@@ -280,7 +280,7 @@ test('We can recover wrong tokens send to the contract', async () => {
   const thirdToken = await DawnTokenImpl.new(thirdTokenOwner, {
     from: deployer,
   });
-  await thirdToken.initialize(deployer, thirdTokenOwner, 'Third Token', '3RD');
+  await thirdToken.initializeDawn(thirdTokenOwner, 'Third Token', '3RD');
 
   const amount = new BN('100');
 

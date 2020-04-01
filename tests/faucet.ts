@@ -33,7 +33,7 @@ beforeEach(async () => {
   token = await DawnTokenImpl.new({ from: deployer });
 
   // Use upgrade initialiser pattern to set up initial value
-  await token.initialize(deployer, owner, 'New Token', 'NEW');
+  await token.initializeDawn(owner, 'New Token', 'NEW');
 
   // Create a faucet of 5 tokens
   faucet = await TokenFaucet.new(token.address, new BN('5').mul(new BN('10e18')), { from: deployer });

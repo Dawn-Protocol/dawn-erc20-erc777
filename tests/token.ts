@@ -34,7 +34,7 @@ beforeEach(async () => {
   token = await DawnTokenImpl.new({ from: deployer });
 
   // Use upgrade initialiser pattern to set up initial value
-  await token.initialize(deployer, owner, 'New Token', 'NEW');
+  await token.initializeDawn(owner, 'New Token', 'NEW');
 });
 
 afterEach(() => {

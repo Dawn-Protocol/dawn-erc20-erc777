@@ -67,7 +67,7 @@ beforeEach(async () => {
   proxy = new Proxy(proxyContract.address);
 
   // This is the constructor in OpenZeppelin upgradeable pattern
-  await token.initialize(deployer, owner, 'New Token', 'NEW');
+  await token.initializeDawn(owner, 'New Token', 'NEW');
 });
 
 test('Proxy owner should be initially proxy multisig', async () => {

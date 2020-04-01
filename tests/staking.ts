@@ -72,7 +72,7 @@ beforeEach(async () => {
   // This is the constructor in OpenZeppelin upgradeable pattern
   // Route all token calls to go through the proxy contract
   newToken = await DawnTokenImpl.at(proxyContract.address);
-  await newToken.initialize(deployer, owner, 'New Token', 'NEW');
+  await newToken.initializeDawn(owner, 'New Token', 'NEW');
 
   // Use the Initializer pattern to bootstrap the contract
   staking = await Staking.new({ from: deployer });
