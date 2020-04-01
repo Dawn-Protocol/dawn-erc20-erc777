@@ -374,6 +374,8 @@ slither --solc ./dockerized-solc.sh .
 
 * [The latest audit report for OpenZeppelin SDK contracts](https://medium.com/nomic-labs-blog/zeppelinos-smart-contracts-audit-iv-a52987973b88)
 
+* [OpenZeppelin UpgradeProxy in other well-known projects and audits](https://forum.openzeppelin.com/t/openzeppelin-usage-in-audited-well-known-projects/2556/8?u=miohtama)
+
 # Ongoing
 
 * [Slither crashes on this repo](https://github.com/crytic/slither/issues/427)
