@@ -10,6 +10,7 @@ import {
   time, // https://docs.openzeppelin.com/test-helpers/0.5/api#latest
   singletons,
 } from '@openzeppelin/test-helpers';
+import { decodeEvent } from '../src/utils/logs';
 
 import assert = require('assert');
 
@@ -140,12 +141,13 @@ test('Only oracle can set pricing', async () => {
 test('User can stake their tokens', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
-  // User approves token for the swap
-  await newToken.approve(staking.address, STAKE_PRICE, { from: user });
+
   // When we think the user stake should end
   const estimatedEndsAt = (await time.latest()).add(new BN(STAKE_DURATION));
+
   // This will create staking id 1
-  const receipt = await staking.stake({ from: user });
+  const receipt = await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user });
+
   // Check the state is right
   assert((await staking.currentlyStaked()).toString() === STAKE_PRICE.toString());
   assert((await staking.totalStaked()).toString() === STAKE_PRICE.toString());
@@ -156,14 +158,28 @@ test('User can stake their tokens', async () => {
   const { staker, amount, endsAt } = await staking.getStakeInformation(1);
   assert(staker === user);
   assert(amount.toString() === STAKE_PRICE.toString());
-  assert(endsAt.toString() === estimatedEndsAt.toString());
+
+  // Must be ~5 seconds difference at the estimated time, allow some slack with block producing
+  assert(Math.abs(endsAt.toNumber() - estimatedEndsAt.toNumber()) < 5);
+
+  // expectEvent() does not work as the emitting contract is not `to` from the tx receitp
+  // In the logs we have Send, Transfer, Staking, so taking event is the last
+  const log = receipt.receipt.rawLogs[2];
+  const event = decodeEvent(Staking, log, 'Staked');
+
+  assert(event.stakeId === '1');
+  assert(event.amount === STAKE_PRICE.toString());
+  assert(event.staker === user);
+  assert(event.endsAt === endsAt.toString());
+
+  /*
   // Check events are right
   expectEvent(receipt, 'Staked', {
     staker: user,
     stakeId: new BN(1),
     amount: new BN(STAKE_PRICE),
     endsAt,
-  });
+  }); */
 });
 
 

@@ -2,9 +2,11 @@ pragma solidity ^0.5.0;
 
 // https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/master/contracts/
 // https://github.com/OpenZeppelin/openzeppelin-sdk/tree/master/packages/lib/contracts
-import '@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol';
+import "@openzeppelin/contracts/token/ERC777/IERC777.sol";
+import "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
+import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 import '@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol';
-import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
+
 import './Recoverable.sol';
 
 /**
@@ -18,26 +20,27 @@ import './Recoverable.sol';
  * Then the user can get these events from logs and unstake by id.
  *
  */
-contract Staking is Initializable, Pausable, Recoverable {
+contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
 
   // A single staking event
   struct Stake {
-
     // Who is staking
     address owner;
-
     // How many tokens staked
     uint amount;
-
     // When this staking ends.
     // Set to zero after unstaking, so the owner
     // cannot unstake the same stake twice.
     uint endsAt;
-
   }
 
+  // ERC-777 callbacks
+  // https://forum.openzeppelin.com/t/simple-erc777-token-example/746
+  IERC1820Registry private _erc1820 = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
+  bytes32 constant private TOKENS_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
+
   // Trusted DAWN token contract
-  IERC20 public token;
+  IERC777 public token;
 
   // How many takens the user can stak
   uint public stakingAmount;
@@ -95,7 +98,7 @@ contract Staking is Initializable, Pausable, Recoverable {
     Recoverable.initialize(sender);
     Pausable.initialize(sender);
 
-    token = IERC20(_token);
+    token = IERC777(_token);
 
     // Initial parameters are set by the owner,
     // before we give the control to the real oracle
@@ -109,18 +112,18 @@ contract Staking is Initializable, Pausable, Recoverable {
 
     // Move ownership away from the deployment account to the multisig
     _transferOwnership(_owner);
+
+    // ERC-777 receiver init
+    // See https://forum.openzeppelin.com/t/simple-erc777-token-example/746
+    _erc1820.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));
   }
 
   /**
-   * Stake owner tokens.
+   * Stake tokens sent on the contract.
    */
-  function stake() public whenNotPaused {
+  function stakeInternal(address sender, uint amount) internal whenNotPaused {
 
-    address sender = _msgSender();
-
-    require(token.allowance(sender, address(this)) >= stakingAmount, "You need to first approve() enough tokens to stake");
-    require(token.balanceOf(sender) >= stakingAmount, "You do not have enough tokens to stake in your wallet");
-    require(token.transferFrom(sender, address(this), stakingAmount) == true, "Could not transfer tokens for staking");
+    require(amount == stakingAmount, "Wrong staking amount");
 
     // Generate an unique id for this action
     // We use a running counter and the 1 is the
@@ -157,7 +160,8 @@ contract Staking is Initializable, Pausable, Recoverable {
     require(s.endsAt != 0, "Already unstaked");
     require(now >= s.endsAt, "Unstaking too soon");
     require(s.owner == sender, "Not your stake");
-    require(token.transfer(sender, s.amount) == true, "Could not return tokens");
+
+    token.send(sender, s.amount, bytes(''));
 
     // Mark the stake released
     stakes[stakeId].endsAt = 0;
@@ -186,6 +190,25 @@ contract Staking is Initializable, Pausable, Recoverable {
   function setOracle(address _oracle) public onlyOwner {
     stakePriceOracle = _oracle;
     emit OracleChanged(_oracle);
+  }
+
+  /**
+   * ERC-777 tokens received callback.
+   *
+   * This is the only public method to get tokens staked.
+   *
+   * https://forum.openzeppelin.com/t/simple-erc777-token-example/746
+   */
+  function tokensReceived(
+      address,
+      address from,
+      address,
+      uint256 amount,
+      bytes calldata,
+      bytes calldata
+  ) external {
+    require(msg.sender == address(token), "Invalid token");
+    stakeInternal(from, amount);
   }
 
 }
