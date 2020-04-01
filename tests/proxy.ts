@@ -7,7 +7,9 @@ import { Proxy, ZWeb3 } from '@openzeppelin/upgrades';
 import {
   BN, // Big Number support
   singletons,
+  constants,
 } from '@openzeppelin/test-helpers';
+import { keccak256 } from 'web3-utils';
 
 import assert = require('assert');
 
@@ -30,6 +32,7 @@ let tokenImpl = null; // ERC20Pausable
 let token = null; // Proxied ERC20Pausable
 let proxyContract = null; // DawnTokenProxy depoyment, AdminUpgradeabilityProxy
 let proxy: Proxy = null; // Zeppelin Proxy helper class
+let erc1820registry = null;
 
 beforeEach(async () => {
   // Fix global usage of ZWeb3.provider in Proxy.admin() call
@@ -38,7 +41,7 @@ beforeEach(async () => {
 
   // We need to setup the ERC-1820 registry on our test chain,
   // or otherwise ERC-777 initializer will revert()
-  await singletons.ERC1820Registry(deployer);
+  erc1820registry = await singletons.ERC1820Registry(deployer);
 
   // This is the first implementation contract - v1 for the smart contarct code.
   // Here we refer the token contract directly without going through the proxy.
@@ -69,6 +72,23 @@ beforeEach(async () => {
   // This is the constructor in OpenZeppelin upgradeable pattern
   await token.initializeDawn(owner, 'New Token', 'NEW');
 });
+
+
+test('ERC-1820 registrations are done for the proxy contract address', async () => {
+  // Has ERC-777
+  const iface777 = keccak256('ERC777Token');
+  let implementer = await erc1820registry.getInterfaceImplementer(proxy.address, iface777);
+  assert(implementer === proxyContract.address);
+  // Has ERC-20
+  const iface20 = keccak256('ERC20Token');
+  implementer = await erc1820registry.getInterfaceImplementer(proxy.address, iface20);
+  assert(implementer === proxyContract.address);
+  // Does not have token recipient
+  const iERC777TokensRecipient = keccak256('ERC777TokensRecipient');
+  implementer = await erc1820registry.getInterfaceImplementer(proxy.address, iERC777TokensRecipient);
+  assert(implementer === constants.ZERO_ADDRESS);
+});
+
 
 test('Proxy owner should be initially proxy multisig', async () => {
   assert(await proxy.admin() === proxyOwner);

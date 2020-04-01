@@ -1,7 +1,6 @@
 pragma solidity ^0.5.0;
 
-// https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/master/contracts/token/ERC20/ERC20Pausable.sol
-// import '@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20Pausable.sol';
+// https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/tree/master/contracts/token/ERC777
 import './ERC777Overridable.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol';
 import './Recoverable.sol';
@@ -58,7 +57,6 @@ contract DawnTokenImpl is ERC777Overridable, Recoverable, Pausable {
     // https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/master/contracts/token/ERC777/ERC777.sol#L315
 
     _mint(manager, manager, INITIAL_SUPPLY, emptyBytes, emptyBytes);
-
   }
 
   //

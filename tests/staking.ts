@@ -10,6 +10,7 @@ import {
   time, // https://docs.openzeppelin.com/test-helpers/0.5/api#latest
   singletons,
 } from '@openzeppelin/test-helpers';
+import { keccak256 } from 'web3-utils';
 import { decodeEvent } from '../src/utils/logs';
 
 import assert = require('assert');
@@ -47,12 +48,13 @@ let proxyContract = null; // DawnTokenProxy depoyment, AdminUpgradeabilityProxy
 let newTokenImpl = null; // ERC20Pausable
 let newToken = null; // Proxy
 let staking = null; // Staking.sol
+let erc1820registry = null;
 
 
 beforeEach(async () => {
   // We need to setup the ERC-1820 registry on our test chain,
   // or otherwise ERC-777 initializer will revert()
-  await singletons.ERC1820Registry(deployer);
+  erc1820registry = await singletons.ERC1820Registry(deployer);
 
   // Here we refer the token contract directly without going through the proxy
   newTokenImpl = await DawnTokenImpl.new({ from: deployer });
@@ -102,6 +104,13 @@ test('Cannot initialize twice', async () => {
     staking.initialize(deployer),
     'Contract instance has already been initialized',
   );
+});
+
+
+test('ERC-1820 registrations are correct', async () => {
+  const iERC777TokensRecipient = keccak256('ERC777TokensRecipient');
+  const implementer = await erc1820registry.getInterfaceImplementer(staking.address, iERC777TokensRecipient);
+  assert(implementer === staking.address);
 });
 
 
