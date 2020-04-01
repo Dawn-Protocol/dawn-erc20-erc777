@@ -11,11 +11,12 @@ import './Recoverable.sol';
  *
  * Needs to be set up behind a proxy contract.
  *
- * We use a modified ERC777 contract, as otherwise we cannot
- * override send, transfer and transferFrom from the parent contract.
+ * We use a modified OpenZeppelin ERC777 contract, as otherwise we cannot
+ * override send(), transfer() and transferFrom(), etc. from the parent contract
+ * as they are marked external.
  * EVM currently does not allow overriding of external functions.
- * Changing the call signature for the required functions
- * was the only change done on the contract - otherwise
+ * Changing the call signatures for the required functions
+ * was the only change done on ERC777Overridable.sol contract - otherwise
  * it is a vanilla copy of
  * https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/bf0277b398c0454276bd8caf0ee35efaf46e686b/contracts/token/ERC777/ERC777.sol
  *
@@ -26,9 +27,9 @@ contract DawnTokenImpl is ERC777Overridable, Recoverable, Pausable {
    * Create the first Dawn token.
    *
    * We are using a function name `initializeDawn` instead of `initialize`
-   * as otherwise we get a function override name clash because same number of parameters.
+   * as otherwise we get a function override name clash with same number of parameters
    * that are different type. The web3.js code
-   * will try to call the initializer() of a wrong signature and this is the error:
+   * will try to call the initializer() of a ERC777Overridable with a wrong signature and this is the error:
    *
    * expected array value (arg="defaultOperators", coderType="array", value="NEW")
    *

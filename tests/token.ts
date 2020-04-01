@@ -103,7 +103,6 @@ test('ERC-777 operator burn works', async () => {
   // Check ERC-777 Burn event
   const receipt = await token.operatorBurn(user2, amount, Buffer.from('userNote'), Buffer.from('operatorNote'), { from: operator });
   const logBurn = receipt.logs[0];
-  console.log(logBurn);
   assert(logBurn.args.operator === operator);
   assert(logBurn.args.data === `0x${Buffer.from('userNote').toString('hex')}`);
   assert(logBurn.args.operatorData === `0x${Buffer.from('operatorNote').toString('hex')}`);

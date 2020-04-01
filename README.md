@@ -334,35 +334,35 @@ Here is a sample deployment in Goerli testnet
 
 ```
 Legacy token {
-  address: '0xf049e669FA12BfA9194F36e29346a7e395457F14',
+  address: '0x50C1670Ea610264c328B072C34A268C9756018eE',
   name: 'Mock of old token',
   symbol: 'OLD',
   supply: '93468683899196345527500000'
 }
 Upgrade proxy for new token {
-  address: '0x5Ab46c99F64Be2504F4f986eF82922de70Ac7dE6',
+  address: '0x8d4Edf8bD61405fd64332882E1e96E4eac729B5C',
   admin: '0xbe48960593b6468AF98474996656D2925E1825df',
-  implementation: '0xa8f87748ab19a2F6A60F55e7269Fd3E81475A0C3'
+  implementation: '0x47079f4A16625f6d2c645f99A5d0bF669873e8a7'
 }
 New token through upgrade proxy {
   name: 'Mock of new token',
-  address: '0x5Ab46c99F64Be2504F4f986eF82922de70Ac7dE6',
+  address: '0x8d4Edf8bD61405fd64332882E1e96E4eac729B5C',
   symbol: 'NEW',
   supply: '93468683899196345527500000'
 }
 Token swap {
-  address: '0x272885727B6bb2371Ec288Ad764Dc7404bA36541',
+  address: '0x0AFeB3a850CF3672388522BC7c3E55a4De2F2902',
   tokensLeftToSwap: '5000000000000000000000',
   signerKey: '39cc67e7dbf2c162095bfc058f4b7ba2f9aa7ec006f9e28dc438c07662a3bb41'
 }
 Faucet {
-  address: '0x79F3Abe6feCe9Ab8bbdCabA84c986094788295d2',
+  address: '0xF5C2FE0DaF9a6123D12FB3eC5dA0A4E651b6BAd7',
   faucetAmount: '3000000000000000000',
   balance: '5000000000000000000000'
 }
 Staking {
-  address: '0x8aaE16B4771D55f0280DF87CbaA89eD913875806',
-  token: '0x5Ab46c99F64Be2504F4f986eF82922de70Ac7dE6',
+  address: '0x1570495a27D55De6196dD0EE856167347B621fbE',
+  token: '0x8d4Edf8bD61405fd64332882E1e96E4eac729B5C',
   stakingTime: '86400',
   stakingAmount: '2500000000000000000',
   oracle: '0x1FCE2cf3D1a1BC980f85FEf6bF3EE17DD6eBcC8D'

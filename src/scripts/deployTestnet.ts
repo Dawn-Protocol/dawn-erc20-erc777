@@ -124,40 +124,38 @@ async function deploy(): Promise<void> {
 
   console.log('Initializing new token at proxy address space of', proxy.address);
   const newToken = DawnTokenImpl.at(proxy.address);
-  await newToken.methods.initialize(deployer, tokenOwnerAccount.address, 'Mock of new token', 'NEW').send({ from: deployer });
+  await newToken.methods.initializeDawn(tokenOwnerAccount.address, 'Mock of new token', 'NEW').send({ from: deployer });
 
   const oldToken = await deployContract('oldToken', FirstBloodTokenMock, [tokenOwnerAccount.address, 'Mock of old token', 'OLD'], { from: deployer, gas: 3_000_000 });
 
   // This one is big so go with a lot of gas
-  const tokenSwap = await deployContract('tokenSwap', TokenSwap, [], { from: deployer, gas: 3_000_000 });
+  const tokenSwap = await deployContract('tokenSwap', TokenSwap, [], { from: deployer, gas: 4_000_000 });
 
   // Faucet gives 3 tokens at a time 3_000_000_000_000_000_000
   const faucetAmount = '3000000000000000000';
-  const faucet = await deployContract('faucet', TokenFaucet, [oldToken.address, faucetAmount], { from: deployer });
+  const faucet = await deployContract('faucet', TokenFaucet, [oldToken.address, faucetAmount], { from: deployer, gas: 3_000_000 });
 
-  const staking = await deployContract('staking', Staking, [], { from: deployer, gas: 3_000_000 });
+  const staking = await deployContract('staking', Staking, [], { from: deployer, gas: 4_000_000 });
 
   console.log('Initializing token swap');
   let args = [
-    deployer,
     tokenOwnerAccount.address,
     signerAccount.address,
     oldToken.address,
     newToken.address,
     BURN_ADDRESS,
   ];
-  await tokenSwap.methods.initializeTokenSwap(...args).send({ from: deployer });
+  await tokenSwap.methods.initialize(...args).send({ from: deployer });
 
   console.log('Initializing staking');
   args = [
-    deployer,
     tokenOwnerAccount.address,
     newToken.address,
     STAKING_PRICE,
     STAKING_TIME,
     oracleAccount.address,
   ];
-  await staking.methods.initializeStaking(...args).send({ from: deployer });
+  await staking.methods.initialize(...args).send({ from: deployer });
 
   console.log('Approving new tokens for swapping');
   await newToken.methods.approve(tokenSwap.address, SWAP_BUDGET.toString()).send({ from: tokenOwnerAccount.address });

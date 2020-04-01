@@ -88,33 +88,27 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
    * We use Zeppelin initializer pattern here for the consistence,
    * even though the contract is not going to be an upgrade proxy
    *
-   * @param sender Sender in the Initializer pattern
    * @param _owner The owning multisig for pausable action and resetting oracle
    * @param _token Which token we will stake
    * @param _amount Initial amount how many tokens are staked at once
    * @param _time Initial duration of the stake in seconds
    * @param _oracle Address of the initial parameters oracle
    */
-  function initialize(address sender, address _owner, address _token, uint _amount, uint _time, address _oracle) public initializer {
+  function initialize(address _owner, address _token, uint _amount, uint _time, address _oracle) public initializer {
 
     // Call parent initializers
-    Recoverable.initialize(sender);
-    Pausable.initialize(sender);
-
-    token = IERC777(_token);
+    Recoverable.initialize(_msgSender());
 
     // Initial parameters are set by the owner,
     // before we give the control to the real oracle
-    stakePriceOracle = sender;
+    stakePriceOracle = _msgSender();
     setStakingParameters(_amount, _time);
     setOracle(_oracle);
 
-    // Get rid of deployment account for Pausable
-    _addPauser(_owner);
-    _removePauser(msg.sender);
-
-    // Move ownership away from the deployment account to the multisig
+    Pausable.initialize(_owner);
     _transferOwnership(_owner);
+
+    token = IERC777(_token);
 
     // ERC-777 receiver init
     // See https://forum.openzeppelin.com/t/simple-erc777-token-example/746

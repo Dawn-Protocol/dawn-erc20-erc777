@@ -77,7 +77,7 @@ beforeEach(async () => {
 
   // Use the Initializer pattern to bootstrap the contract
   staking = await Staking.new({ from: deployer });
-  await staking.initialize(deployer, owner, newToken.address, STAKE_PRICE, STAKE_DURATION, oracle, ({ from: deployer }));
+  await staking.initialize(owner, newToken.address, STAKE_PRICE, STAKE_DURATION, oracle, ({ from: deployer }));
 });
 
 
@@ -94,7 +94,7 @@ test('Cannot initialize twice', async () => {
   // Avoid the infamous Parity wallet bug
   // Call our initializer
   await expectRevert(
-    staking.initialize(deployer, owner, newToken.address, STAKE_PRICE, STAKE_DURATION, oracle, ({ from: deployer })),
+    staking.initialize(owner, newToken.address, STAKE_PRICE, STAKE_DURATION, oracle, ({ from: deployer })),
     'Contract instance has already been initialized',
   );
   // Avoid the infamous Parity wallet bug
