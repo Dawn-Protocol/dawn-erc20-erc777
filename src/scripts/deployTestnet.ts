@@ -37,11 +37,17 @@ const inputs = {
   // Infura project id key for command-line web3 client for testnet
   infuraProjectId: envalid.str(),
 
+  // "goerli" or "ropsten"
+  network: envalid.str(),
+
 };
+
+// Get config file from the command line or fallback to the default
+const configPath = process.argv[2] || 'secrets/testnet.env.ini';
 
 // https://www.npmjs.com/package/envalid
 const envOptions = {
-  dotEnvPath: 'secrets/testnet.env.ini',
+  dotEnvPath: configPath,
 };
 
 const BURN_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -64,11 +70,12 @@ async function deploy(): Promise<void> {
     oraclePrivateKeyHex,
     infuraProjectId,
     proxyOwnerPrivateKeyHex,
+    network,
   } = envalid.cleanEnv(process.env, inputs, envOptions);
 
   // Get a websocket that connects us to Infura Ethereum node
   const deploymentKeys = [deployerPrivateKeyHex, tokenOwnerPrivateKeyHex];
-  const provider = createProvider(deploymentKeys, infuraProjectId);
+  const provider = createProvider(deploymentKeys, infuraProjectId, network);
 
   // OpenZeppelin framework likes it globals
   // // https://github.com/OpenZeppelin/openzeppelin-sdk/blob/62ffef55559e0076ef6066ccf2861fd31de6a3aa/packages/lib/src/artifacts/ZWeb3.ts

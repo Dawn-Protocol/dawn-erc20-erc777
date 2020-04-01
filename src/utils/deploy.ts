@@ -48,7 +48,7 @@ export async function checkDeploymentAccounts(privateKeys: string[]): Promise<vo
  *  Creates a Web3 provider that uses local private keys for signing the transactions
  *  and WebSockets to communicate and broadcast transactions over Infura node.
  */
-export function createProvider(privateKeys: string[], infuraProjectId: string): any {
+export function createProvider(privateKeys: string[], infuraProjectId: string, network: string): any {
   // https://github.com/trufflesuite/truffle/tree/develop/packages/hdwallet-provider
 
   // Be explicit on our connection options so we
@@ -59,7 +59,7 @@ export function createProvider(privateKeys: string[], infuraProjectId: string): 
   };
 
   assert(infuraProjectId, 'Infure project id missing');
-  const rpcURL = `wss://goerli.infura.io/ws/v3/${infuraProjectId}`;
+  const rpcURL = `wss://${network}.infura.io/ws/v3/${infuraProjectId}`;
 
   console.log('Connecting to Infura endpoint', rpcURL);
 

@@ -330,7 +330,7 @@ npx ts-node src/scripts/deployTestnet.ts
 ```
 # Goerli deployment
 
-Here is a sample deployment in Goerli testnet
+Here is a sample deployment in Goerli testnet:
 
 ```
 Legacy token {
@@ -366,8 +366,48 @@ Staking {
   stakingTime: '86400',
   stakingAmount: '2500000000000000000',
   oracle: '0x1FCE2cf3D1a1BC980f85FEf6bF3EE17DD6eBcC8D'
+}Update
+```
+
+Ropsten testnet:
+
+```
+Legacy token {
+  address: '0x545f4094e4463731326Acdf16958b9F0FD86f940',
+  name: 'Mock of old token',
+  symbol: 'OLD',
+  supply: '93468683899196345527500000'
+}
+Upgrade proxy for new token {
+  address: '0x33b4576Dd24bC4b1354F1097Cea316c38CFa8C4A',
+  admin: '0xbe48960593b6468AF98474996656D2925E1825df',
+  implementation: '0x154f31d98a2723C96CbaD72f54Cd5a658FDC0089'
+}
+New token through upgrade proxy {
+  name: 'Mock of new token',
+  address: '0x33b4576Dd24bC4b1354F1097Cea316c38CFa8C4A',
+  symbol: 'NEW',
+  supply: '93468683899196345527500000'
+}
+Token swap {
+  address: '0xadfdaB0F07f8Bc8ed3FE5fA0285d479B75C26da2',
+  tokensLeftToSwap: '5000000000000000000000',
+  signerKey: '39cc67e7dbf2c162095bfc058f4b7ba2f9aa7ec006f9e28dc438c07662a3bb41'
+}
+Faucet {
+  address: '0x917DC367820a249B0b9f8216561c9c94BD9e906d',
+  faucetAmount: '3000000000000000000',
+  balance: '5000000000000000000000'
+}
+Staking {
+  address: '0x62aa56E0b1D5766b35af60F55Fa52ca15fD6Eb2f',
+  token: '0x33b4576Dd24bC4b1354F1097Cea316c38CFa8C4A',
+  stakingTime: '86400',
+  stakingAmount: '2500000000000000000',
+  oracle: '0x1FCE2cf3D1a1BC980f85FEf6bF3EE17DD6eBcC8D'
 }
 ```
+
 # Production deployment strategy
 
 Two different multi-signature wallets are needed.
