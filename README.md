@@ -118,6 +118,28 @@ can be adjusted.
 To unstake, the user must manually call `unstake()` for their
 previous stake id.
 
+## Flash staking
+
+The staking contract also supports "flash staking",
+so that tokens are bought and staked in a single transaction,
+instead of the user need to go through manual steps
+to set everything accept.
+
+* There could be a smart contract that accepts ETH payments
+
+* The smart contract buys DAWN token with this ETH
+  from a liquidity pool like Uniswap
+
+* Bought tokens are staked on the behalf of the user by the smart contract
+
+* Extra tokens are send back to the wallet that paid
+  ETH for buying in the first place
+
+To stake on the behalf of someone else,
+you need to fill `userData` of ERC-777 `send()`
+with correct parameters. This message will be decoded
+by ERC777TokensRecipient callback.
+
 ### Staking deployment
 
 ![staking deployment](docs/deployment/staking.png)

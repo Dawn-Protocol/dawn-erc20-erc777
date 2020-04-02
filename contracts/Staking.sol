@@ -37,6 +37,13 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
     uint endsAt;
   }
 
+  //
+  // One byte message ids that we can get through ERC-777 token send user data
+  //
+
+  // Tokens to be staked are not for the sender address, but someone else
+  uint8 constant USER_DATA_STAKE_BEHALF = 0x07;
+
   // ERC-777 callbacks
   // https://forum.openzeppelin.com/t/simple-erc777-token-example/746
   IERC1820Registry private _erc1820 = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
@@ -194,6 +201,17 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
    *
    * This is the only public method to get tokens staked.
    *
+   * The end point can act differently depending on userData
+   * that is supplied with the token transfer.
+   *
+   * - No data = user is just staking tokens for himself
+   * = [0x07: uint8, address] = stake on behalf of someone else
+   *
+   * Staking on behalf of someone else is useful e.g.
+   * if a smart contract buys DAWN tokens for you and
+   * wants to get them immediately staked on behalf of you,
+   * all in a single tranaction (flash staking).
+   *
    * https://forum.openzeppelin.com/t/simple-erc777-token-example/746
    */
   function tokensReceived(
@@ -201,11 +219,31 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
       address from,
       address,
       uint256 amount,
-      bytes calldata,
+      bytes calldata userData,
       bytes calldata
   ) external {
-    require(msg.sender == address(token), "Invalid token");
-    stakeInternal(from, amount);
+
+    address sender = _msgSender();
+
+    require(sender == address(token), "Invalid token");
+
+    address staker = from;
+
+    // Check what we have in a payload
+    if(userData.length > 0) {
+
+      // Decode Solidity tightly packed arguments
+      (uint8 message, address behalf) = abi.decode(userData, (uint8, address));  // solhint-disable-line
+
+      // Only stake behalf special action supported at the moment.
+      // It will also serve as a check byte that we do not accidenteally
+      // react to random data users might have inputed themselves
+      require(message == USER_DATA_STAKE_BEHALF, "Unknown userdata");
+
+      staker = behalf;
+    }
+
+    stakeInternal(staker, amount);
   }
 
 }
