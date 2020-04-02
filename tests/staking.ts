@@ -329,25 +329,20 @@ test('User cannot unstake twice', async () => {
 test('User can stake behalf of another', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE, { from: owner });
-
   // Create a user data for ERC-777 send()
   const { web3 } = DawnTokenImpl;
   const STAKE_BEHALF_MSG = 0x07;
   const userData = web3.eth.abi.encodeParameters(['uint8', 'address'], [STAKE_BEHALF_MSG, user2]);
-
   // This will create staking id 1
   const receipt = await newToken.send(staking.address, STAKE_PRICE, userData, { from: user });
-
   // Check the state is right
   assert((await staking.currentlyStaked()).toString() === STAKE_PRICE.toString());
   assert((await staking.totalStaked()).toString() === STAKE_PRICE.toString());
   assert(await staking.isStillStaked(1) === true);
-
   // Check the stake data
   const { staker, amount, endsAt } = await staking.getStakeInformation(1);
   assert(staker === user2);
   assert(amount.toString() === STAKE_PRICE.toString());
-
   // expectEvent() does not work as the emitting contract is not `to` from the tx receitp
   // In the logs we have Send, Transfer, Staking, so taking event is the last
   const log = receipt.receipt.rawLogs[2];
@@ -363,12 +358,10 @@ test('User can stake behalf of another', async () => {
 test('ERC-777 token receiver gives an error on wrong userdata', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE, { from: owner });
-
   // Create a user data for ERC-777 send()
   const { web3 } = DawnTokenImpl;
   const INVALID_MSG = 0x08;
   const userData = web3.eth.abi.encodeParameters(['uint8', 'address'], [INVALID_MSG, user2]);
-
   await expectRevert(
     newToken.send(staking.address, STAKE_PRICE, userData, { from: user }),
     'Unknown userdata',
