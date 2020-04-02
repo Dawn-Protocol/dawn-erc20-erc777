@@ -11,7 +11,6 @@ import {
   singletons,
 } from '@openzeppelin/test-helpers';
 import { keccak256 } from 'web3-utils';
-import { ZWeb3 } from '@openzeppelin/upgrades';
 import { decodeEvent } from '../src/utils/logs';
 
 import assert = require('assert');
