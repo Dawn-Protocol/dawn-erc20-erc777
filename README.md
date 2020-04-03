@@ -350,7 +350,9 @@ npx ts-node src/scripts/deployTestnet.ts
 ```sh
 npx ts-node src/scripts/deployTestnet.ts
 ```
-# Goerli deployment
+# Testnet deployment
+
+## Goerli
 
 Here is a sample deployment in Goerli testnet:
 
@@ -390,6 +392,8 @@ Staking {
   oracle: '0x1FCE2cf3D1a1BC980f85FEf6bF3EE17DD6eBcC8D'
 }Update
 ```
+
+## Ropsten
 
 Ropsten testnet:
 
