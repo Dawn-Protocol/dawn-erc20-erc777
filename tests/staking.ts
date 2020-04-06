@@ -423,7 +423,7 @@ test('User can unstake behalf of another', async () => {
   // user2 unstakes instead of user
   const { endsAt } = await staking.getStakeInformation(stakeId);
   const now = (await time.latest()).toNumber();
-  console.log('Differ', endsAt.toNumber() - now, 'duration', STAKE_DURATION, 'startTime', startTime, 'now', now, 'endsAt', endsAt.toNumber());
+  console.log('Differ', endsAt.toNumber() - now, 'duration', STAKE_DURATION, 'startTime', startTime, 'now', now, 'endsAt', endsAt.toNumber(), 'Durationx', endsAt.toNumber() - startTime.toNumber());
   assert((await time.latest()).toNumber() > endsAt.toNumber());
   const receipt = await staking.unstake(stakeId, { from: user2 });
   // Tokens where sent back to the user
