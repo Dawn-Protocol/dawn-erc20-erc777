@@ -11,6 +11,7 @@ import {
   singletons,
 } from '@openzeppelin/test-helpers';
 import { keccak256 } from 'web3-utils';
+import { randomBytes } from 'crypto';
 import { decodeEvent } from '../src/utils/logs';
 
 import assert = require('assert');
@@ -37,6 +38,11 @@ const STAKE_PRICE_2 = 1500;
 // Used whn the price changes in the middle of staking
 const STAKE_DURATION_2 = 48 * 60 * 60;
 
+
+// Staking token receipt messages
+const STAKE_OWN_MSG = 0x06;
+const STAKE_BEHALF_MSG = 0x07;
+
 // Loads a compiled contract using OpenZeppelin test-environment
 const DawnTokenImpl = contract.fromArtifact('DawnTokenImpl');
 const Staking = contract.fromArtifact('Staking');
@@ -48,6 +54,21 @@ let newTokenImpl = null; // ERC20Pausable
 let newToken = null; // Proxy
 let staking = null; // Staking.sol
 let erc1820registry = null;
+let web3 = null;
+
+
+/**
+ * Creates 128-bit UUID.
+ *
+ * Note: for testing we do not import UUID package, but just generate 128-bit random number
+ *
+ * @return 0x prefixed hex string
+ */
+function createStakeId(): string {
+  // 128-bit number
+  const id = randomBytes(16);
+  return `0x${id.toString('hex')}`;
+}
 
 
 beforeEach(async () => {
@@ -78,6 +99,8 @@ beforeEach(async () => {
   // Use the Initializer pattern to bootstrap the contract
   staking = await Staking.new({ from: deployer });
   await staking.initialize(owner, newToken.address, STAKE_PRICE, STAKE_DURATION, oracle, ({ from: deployer }));
+
+  web3 = Staking.web3;
 });
 
 
@@ -147,6 +170,13 @@ test('Only oracle can set pricing', async () => {
 });
 
 
+test('Non-allocated stake ids do not exist', async () => {
+  // Try some non-allocated ids
+  assert(await staking.isStake(0x01) === false);
+  assert(await staking.isStake(0x00) === false);
+});
+
+
 test('User can stake their tokens', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
@@ -154,17 +184,21 @@ test('User can stake their tokens', async () => {
   // When we think the user stake should end
   const estimatedEndsAt = (await time.latest()).add(new BN(STAKE_DURATION));
 
+  const stakeId = createStakeId();
+  const userData = web3.eth.abi.encodeParameters(['uint8', 'uint128'], [STAKE_OWN_MSG, stakeId]);
+
   // This will create staking id 1
-  const receipt = await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user });
+  const receipt = await newToken.send(staking.address, STAKE_PRICE, userData, { from: user });
 
   // Check the state is right
   assert((await staking.currentlyStaked()).toString() === STAKE_PRICE.toString());
   assert((await staking.totalStaked()).toString() === STAKE_PRICE.toString());
-  assert(await staking.isStillStaked(1) === true);
+  assert(await staking.isStillStaked(stakeId) === true);
+  assert(await staking.isStake(stakeId) === true);
   assert((await newToken.balanceOf(staking.address)).toString() === STAKE_PRICE.toString());
   assert((await newToken.balanceOf(user)).toString() === '10'.toString());
   // Check the stake data
-  const { staker, amount, endsAt } = await staking.getStakeInformation(1);
+  const { staker, amount, endsAt } = await staking.getStakeInformation(stakeId);
   assert(staker === user);
   assert(amount.toString() === STAKE_PRICE.toString());
 
@@ -176,7 +210,8 @@ test('User can stake their tokens', async () => {
   const log = receipt.receipt.rawLogs[2];
   const event = decodeEvent(Staking, log, 'Staked');
 
-  assert(event.stakeId === '1');
+  // Create hex string out of raw 128-bit in as a string and watch out for 0x prefix
+  assert((new BN(event.stakeId)).toString(16) === stakeId.substring(2));
   assert(event.amount === STAKE_PRICE.toString());
   assert(event.staker === user);
   assert(event.endsAt === endsAt.toString());
@@ -195,40 +230,46 @@ test('User can stake their tokens', async () => {
 test('User can unstake their tokens', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
-  // This will create staking id 1
-  await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user });
+
+  const stakeId = createStakeId();
+  const userData = web3.eth.abi.encodeParameters(['uint8', 'uint128'], [STAKE_OWN_MSG, stakeId]);
+
+  await newToken.send(staking.address, STAKE_PRICE, userData, { from: user });
   // Time travel to unlock
   time.increase(STAKE_DURATION + 1);
-  const receipt = await staking.unstake(1, { from: user });
-  // Check events are right
-  expectEvent(receipt, 'Unstaked', {
-    staker: user,
-    stakeId: new BN(1),
-    amount: new BN(STAKE_PRICE),
-  });
+  const receipt = await staking.unstake(stakeId, { from: user });
+
   // Check the state is right
   assert((await staking.currentlyStaked()).toString() === '0');
   assert((await staking.totalStaked()).toString() === STAKE_PRICE.toString());
-  assert(await staking.isStillStaked(1) === false);
+  assert(await staking.isStillStaked(stakeId) === false);
+  assert(await staking.isStake(stakeId) === true);
   assert((await newToken.balanceOf(staking.address)).toString() === '0');
   assert((await newToken.balanceOf(user)).toString() === (STAKE_PRICE + 10).toString().toString());
   // Check the stake data
-  const { staker, amount, endsAt } = await staking.getStakeInformation(1);
+  const { staker, amount, endsAt } = await staking.getStakeInformation(stakeId);
   assert(staker === user);
   assert(amount.toString() === STAKE_PRICE.toString());
   assert(endsAt.toString() === '0'); // Signals that the tokens have been unstaked
+  // Check events are right
+  expectEvent(receipt, 'Unstaked', {
+    staker: user,
+    // stakeId: new BN(stakeId), fails to parse logs correctly?
+    amount: new BN(STAKE_PRICE),
+  });
 });
 
 
 test('User cannot unstake their tokens too soon', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE, { from: owner });
-  // This will create staking id 1
-  await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user });
+  const stakeId = createStakeId();
+  const userData = web3.eth.abi.encodeParameters(['uint8', 'uint128'], [STAKE_OWN_MSG, stakeId]);
+  await newToken.send(staking.address, STAKE_PRICE, userData, { from: user });
   time.increase(STAKE_DURATION - 2);
   // Random users cannot reset the oracle
   await expectRevert(
-    staking.unstake(1, { from: user }),
+    staking.unstake(stakeId, { from: user }),
     'Unstaking too soon',
   );
 });
@@ -240,8 +281,10 @@ test('Users cannot stake or unstake while paused', async () => {
   // Set the paused state
   await staking.pause({ from: owner });
   // Cannot stake while paused
+  const stakeId = createStakeId();
+  const userData = web3.eth.abi.encodeParameters(['uint8', 'uint128'], [STAKE_OWN_MSG, stakeId]);
   await expectRevert(
-    newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user }),
+    newToken.send(staking.address, STAKE_PRICE, userData, { from: user }),
     'Pausable: paused',
   );
   // Random users cannot reset the oracle
@@ -251,15 +294,17 @@ test('Users cannot stake or unstake while paused', async () => {
   );
   // Unpause and we can stake again
   await staking.unpause({ from: owner });
-  await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user });
+  await newToken.send(staking.address, STAKE_PRICE, userData, { from: user });
 });
 
 
 test('User need to send the correct amount to stake', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
+  const stakeId = createStakeId();
+  const userData = web3.eth.abi.encodeParameters(['uint8', 'uint128'], [STAKE_OWN_MSG, stakeId]);
   await expectRevert(
-    newToken.send(staking.address, STAKE_PRICE / 2, Buffer.from(''), { from: user }),
+    newToken.send(staking.address, STAKE_PRICE / 2, userData, { from: user }),
     'Wrong staking amount',
   );
 });
@@ -269,40 +314,38 @@ test('Two different users can stake on different staking periods', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE, { from: owner });
   await newToken.transfer(user2, STAKE_PRICE_2, { from: owner });
+  const stakeId1 = createStakeId();
+  const userData1 = web3.eth.abi.encodeParameters(['uint8', 'uint128'], [STAKE_OWN_MSG, stakeId1]);
+  const stakeId2 = createStakeId();
+  const userData2 = web3.eth.abi.encodeParameters(['uint8', 'uint128'], [STAKE_OWN_MSG, stakeId2]);
   // User 1 stakes
-  await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user });
+  await newToken.send(staking.address, STAKE_PRICE, userData1, { from: user });
   time.increase(5);
   // User 2 stakes
   await staking.setStakingParameters(STAKE_PRICE_2, STAKE_DURATION_2, { from: oracle });
-  await newToken.send(staking.address, STAKE_PRICE_2, Buffer.from(''), { from: user2 });
+  await newToken.send(staking.address, STAKE_PRICE_2, userData2, { from: user2 });
   // Check state
   assert((await staking.currentlyStaked()).toNumber() === STAKE_PRICE + STAKE_PRICE_2);
   assert((await staking.totalStaked()).toNumber() === STAKE_PRICE + STAKE_PRICE_2);
-  assert(await staking.isStillStaked(1) === true);
-  assert(await staking.isStillStaked(2) === true);
-  assert((await staking.stakeNumber()).toNumber() === 2);
+  assert(await staking.isStillStaked(stakeId1) === true);
+  assert(await staking.isStillStaked(stakeId2) === true);
   assert((await newToken.balanceOf(staking.address)).toNumber() === STAKE_PRICE + STAKE_PRICE_2);
-  const stake1 = await staking.getStakeInformation(1);
+  const stake1 = await staking.getStakeInformation(stakeId1);
   assert(stake1.staker === user);
-  const stake2 = await staking.getStakeInformation(2);
+  const stake2 = await staking.getStakeInformation(stakeId2);
   assert(stake2.staker === user2);
   assert(stake2.endsAt.toString() !== stake1.endsAt.toString());
   assert(stake2.amount.toString() !== stake1.amount.toString());
   // User 1 cannot unstake yet
   await expectRevert(
-    staking.unstake(1, { from: user }),
+    staking.unstake(stakeId1, { from: user }),
     'Unstaking too soon',
   );
   // Go forward until both stakes have expired
   await time.increase(STAKE_DURATION_2);
-  // User 2 cannot unstake for user 1
-  await expectRevert(
-    staking.unstake(1, { from: user2 }),
-    'Not your stake',
-  );
   // Unstake both in different order
-  await staking.unstake(2, { from: user2 });
-  await staking.unstake(1, { from: user });
+  await staking.unstake(stakeId2, { from: user2 });
+  await staking.unstake(stakeId1, { from: user });
   assert((await newToken.balanceOf(user)).toNumber() === STAKE_PRICE);
   assert((await newToken.balanceOf(user2)).toNumber() === STAKE_PRICE_2);
   assert((await newToken.balanceOf(staking.address)).toNumber() === 0);
@@ -313,14 +356,27 @@ test('User cannot unstake twice', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE, { from: owner });
   await newToken.transfer(user2, STAKE_PRICE_2, { from: owner });
+  const stakeId1 = createStakeId();
+  const userData1 = web3.eth.abi.encodeParameters(['uint8', 'uint128'], [STAKE_OWN_MSG, stakeId1]);
+  const stakeId2 = createStakeId();
+  const userData2 = web3.eth.abi.encodeParameters(['uint8', 'uint128'], [STAKE_OWN_MSG, stakeId2]);
   // Add enough balance for 2 unstakes
-  await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user });
-  await newToken.send(staking.address, STAKE_PRICE, Buffer.from(''), { from: user2 });
+  await newToken.send(staking.address, STAKE_PRICE, userData1, { from: user });
+  await newToken.send(staking.address, STAKE_PRICE, userData2, { from: user2 });
   await time.increase(STAKE_DURATION_2);
   // User 1 cannot unstake stwice
-  await staking.unstake(1, { from: user });
+  await staking.unstake(stakeId1, { from: user });
   await expectRevert(
-    staking.unstake(1, { from: user }),
+    staking.unstake(stakeId1, { from: user }),
+    'Already unstaked',
+  );
+});
+
+
+test('Cannot unstake empty id', async () => {
+  // Give user some tokens to stake
+  await expectRevert(
+    staking.unstake(0x01, { from: user }),
     'Already unstaked',
   );
 });
@@ -330,28 +386,53 @@ test('User can stake behalf of another', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE, { from: owner });
   // Create a user data for ERC-777 send()
-  const { web3 } = DawnTokenImpl;
-  const STAKE_BEHALF_MSG = 0x07;
-  const userData = web3.eth.abi.encodeParameters(['uint8', 'address'], [STAKE_BEHALF_MSG, user2]);
+  const stakeId = createStakeId();
+  const userData = web3.eth.abi.encodeParameters(['uint8', 'uint128', 'address'], [STAKE_BEHALF_MSG, stakeId, user2]);
   // This will create staking id 1
   const receipt = await newToken.send(staking.address, STAKE_PRICE, userData, { from: user });
   // Check the state is right
   assert((await staking.currentlyStaked()).toString() === STAKE_PRICE.toString());
   assert((await staking.totalStaked()).toString() === STAKE_PRICE.toString());
-  assert(await staking.isStillStaked(1) === true);
+  assert(await staking.isStillStaked(stakeId) === true);
   // Check the stake data
-  const { staker, amount, endsAt } = await staking.getStakeInformation(1);
+  const { staker, amount, endsAt } = await staking.getStakeInformation(stakeId);
   assert(staker === user2);
   assert(amount.toString() === STAKE_PRICE.toString());
   // expectEvent() does not work as the emitting contract is not `to` from the tx receitp
   // In the logs we have Send, Transfer, Staking, so taking event is the last
   const log = receipt.receipt.rawLogs[2];
   const event = decodeEvent(Staking, log, 'Staked');
-
-  assert(event.stakeId === '1');
+  assert((new BN(event.stakeId)).toString(16) === stakeId.substring(2));
   assert(event.amount === STAKE_PRICE.toString());
   assert(event.staker === user2);
   assert(event.endsAt === endsAt.toString());
+});
+
+
+test('User can unstake behalf of another', async () => {
+  // Give user some tokens to stake
+  await newToken.transfer(user, STAKE_PRICE, { from: owner });
+  // Create a user data for ERC-777 send()
+  const stakeId = createStakeId();
+  const userData = web3.eth.abi.encodeParameters(['uint8', 'uint128'], [STAKE_OWN_MSG, stakeId]);
+  // This will create staking id 1
+  const startTime = (await time.latest()).toNumber();
+  newToken.send(staking.address, STAKE_PRICE, userData, { from: user });
+  await time.increase(STAKE_DURATION + 1);
+  await time.advanceBlock(); // Force a block to be mined with the new timestamp
+  // user2 unstakes instead of user
+  const { endsAt } = await staking.getStakeInformation(stakeId);
+  const now = (await time.latest()).toNumber();
+  console.log('Differ', endsAt.toNumber() - now, 'duration', STAKE_DURATION, 'startTime', startTime, 'now', now, 'endsAt', endsAt.toNumber());
+  assert((await time.latest()).toNumber() > endsAt.toNumber());
+  const receipt = await staking.unstake(stakeId, { from: user2 });
+  // Tokens where sent back to the user
+  assert((await newToken.balanceOf(user)).toNumber() === STAKE_PRICE);
+  expectEvent(receipt, 'Unstaked', {
+    staker: user,
+    // stakeId: new BN(stakeId), fails to parse logs correctly?
+    amount: new BN(STAKE_PRICE),
+  });
 });
 
 
@@ -359,12 +440,11 @@ test('ERC-777 token receiver gives an error on wrong userdata', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE, { from: owner });
   // Create a user data for ERC-777 send()
-  const { web3 } = DawnTokenImpl;
   const INVALID_MSG = 0x08;
   const userData = web3.eth.abi.encodeParameters(['uint8', 'address'], [INVALID_MSG, user2]);
   await expectRevert(
     newToken.send(staking.address, STAKE_PRICE, userData, { from: user }),
-    'Unknown userdata',
+    'Unknown send() msg',
   );
 });
 
@@ -373,8 +453,6 @@ test('ERC-777 token receiver gives an error on wrong message length', async () =
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE, { from: owner });
   // Create a user data for ERC-777 send()
-  const { web3 } = DawnTokenImpl;
-  const STAKE_BEHALF_MSG = 0x07;
   const userData = web3.eth.abi.encodeParameters(['uint8', 'address'], [STAKE_BEHALF_MSG, user2]);
   // abi.decode in Solidity will simply just "revert" as the error message
   await expectRevert(

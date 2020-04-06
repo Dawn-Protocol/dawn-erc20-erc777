@@ -62,12 +62,14 @@
   "dependencies": {
     "@openzeppelin/upgrades": "^2.7.2",
     "@truffle/hdwallet-provider": "^1.0.33",
+    "bn.js": "^5.1.1",
     "envalid": "^6.0.1",
     "eth-lib": "^0.1.29",
     "truffle-hdwallet-provider": "^1.0.17",
+    "uuid": "^7.0.3",
+    "web3": "^1.2.6",
     "web3-eth-contract": "^1.2.6",
     "web3-providers-ws": "^1.2.6",
-    "web3": "^1.2.6",
     "web3-utils": "^1.2.6"
   },
   "jest": {

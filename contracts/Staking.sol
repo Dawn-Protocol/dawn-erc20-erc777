@@ -41,6 +41,9 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
   // One byte message ids that we can get through ERC-777 token send user data
   //
 
+  // Tokens are staked for the owner itself
+  uint8 constant USER_DATA_STAKE_OWN = 0x06;
+
   // Tokens to be staked are not for the sender address, but someone else
   uint8 constant USER_DATA_STAKE_BEHALF = 0x07;
 
@@ -65,25 +68,22 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
   // (unstaked tokens are removed)
   uint public currentlyStaked;
 
-  // The next staking action unique identifier
-  uint public stakeNumber;
-
   // An Ethereum servie account that can reset the stating parameters,
   // as likely the stake amount will fluctuate with the dollar
   // price of the token
   address public stakePriceOracle;
 
   // Stakes by the user
-  mapping(uint => Stake) stakes;
+  mapping(uint128 => Stake) stakes;
 
   // Staking price and period was reset
   event StakingParametersChanged(uint amount, uint time);
 
   // User staked their tokens
-  event Staked(address indexed staker, uint stakeId, uint amount, uint endsAt);
+  event Staked(address indexed staker, uint128 stakeId, uint amount, uint endsAt);
 
   // User withdraw their tokens from staking
-  event Unstaked(address indexed staker, uint stakeId, uint amount);
+  event Unstaked(address indexed staker, uint128 stakeId, uint amount);
 
   // Mew stake price oracle has been set
   event OracleChanged(address newOracle);
@@ -124,55 +124,69 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
 
   /**
    * Stake tokens sent on the contract.
+   *
+   * @param stakeId Random 128-bit UUID generated on the client side for the user
+   * @param staker On whose behalf we are staking
+   * @param amount Amount of tokens to stake
    */
-  function stakeInternal(address sender, uint amount) internal whenNotPaused {
+  function stakeInternal(uint128 stakeId, address staker, uint amount) internal whenNotPaused {
 
+    require(stakeId != 0x0, "Invalid stake id");
+    require(staker != address(0x0), "Bad staker");
     require(amount == stakingAmount, "Wrong staking amount");
 
-    // Generate an unique id for this action
-    // We use a running counter and the 1 is the
-    // id for the first stake.
-    uint id = (++stakeNumber);
     uint endsAt = now + stakingTime;
 
-    stakes[id] = Stake(sender, stakingAmount, endsAt);
+    stakes[stakeId] = Stake(staker, stakingAmount, endsAt);
 
     totalStaked += stakingAmount;
     currentlyStaked += stakingAmount;
 
-    emit Staked(sender, id, stakingAmount, endsAt);
+    emit Staked(staker, stakeId, stakingAmount, endsAt);
   }
 
   /**
    * Return data for a single stake.
    */
-  function getStakeInformation(uint stakeId) public view returns (address staker, uint amount, uint endsAt) {
+  function getStakeInformation(uint128 stakeId) public view returns (address staker, uint amount, uint endsAt) {
     Stake memory s = stakes[stakeId];
     return (s.owner, s.amount, s.endsAt);
   }
 
   /**
+   * Check if a stakeId has been allocated
+   */
+  function isStake(uint128 stakeId) public view returns (bool) {
+    return stakes[stakeId].amount != 0;
+  }
+
+  /**
    * Return true if the user has still tokens in the staking contract for a previous stake.
    */
-  function isStillStaked(uint stakeId) public view returns (bool) {
+  function isStillStaked(uint128 stakeId) public view returns (bool) {
     return stakes[stakeId].endsAt != 0;
   }
 
-  function unstake(uint stakeId) public whenNotPaused {
+  /**
+   * Send tokens back to the staker.
+   *
+   * It is possible to unstake on behalf of others.
+   */
+  function unstake(uint128 stakeId) public whenNotPaused {
     address sender = _msgSender();
     Stake memory s = stakes[stakeId];
     require(s.endsAt != 0, "Already unstaked");
     require(now >= s.endsAt, "Unstaking too soon");
-    require(s.owner == sender, "Not your stake");
 
-    token.send(sender, s.amount, bytes(''));
+    // Use ERC-777 to send tokens to the wallet of the owner
+    token.send(s.owner, s.amount, bytes(''));
 
     // Mark the stake released
     stakes[stakeId].endsAt = 0;
 
     currentlyStaked -= s.amount;
 
-    emit Unstaked(sender, stakeId, s.amount);
+    emit Unstaked(s.owner, stakeId, s.amount);
   }
 
   /**
@@ -224,26 +238,38 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
   ) external {
 
     address sender = _msgSender();
-
     require(sender == address(token), "Invalid token");
 
     address staker = from;
 
     // Check what we have in a payload
-    if(userData.length > 0) {
+    require(userData.length > 0, "User data missing");
+
+    uint8 msgId = abi.decode(userData, (uint8));
+    uint8 discard;
+    uint128 stakeId;
+    address behalf;
+
+    if(msgId == USER_DATA_STAKE_OWN) {
+      // Stake for yourself
 
       // Decode Solidity tightly packed arguments
-      (uint8 message, address behalf) = abi.decode(userData, (uint8, address));  // solhint-disable-line
+      (discard, stakeId) = abi.decode(userData, (uint8, uint128));
 
-      // Only stake behalf special action supported at the moment.
-      // It will also serve as a check byte that we do not accidenteally
-      // react to random data users might have inputed themselves
-      require(message == USER_DATA_STAKE_BEHALF, "Unknown userdata");
+      staker = from;
+
+    } else if(msgId == USER_DATA_STAKE_BEHALF) {
+      // Stake for someone else
+
+      // Decode Solidity tightly packed arguments
+      (discard, stakeId, behalf) = abi.decode(userData, (uint8, uint128, address));
 
       staker = behalf;
+    } else {
+      revert("Unknown send() msg");
     }
 
-    stakeInternal(staker, amount);
+    stakeInternal(stakeId, staker, amount);
   }
 
 }
