@@ -351,6 +351,47 @@ npx ts-node src/scripts/deployTestnet.ts
 ```
 # Testnet deployment
 
+## Ropsten
+
+The contracts are currently deployed on Ropsten testnet:
+
+```
+Legacy token {
+  address: '0x6a5d2F16E9D2113d568064AEec93Fbd6c195Ca39',
+  name: 'Mock of old token',
+  symbol: 'OLD',
+  supply: '93468683899196345527500000'
+}
+Upgrade proxy for new token {
+  address: '0xAE60F66d9FDf4ccb172D1c672466e1AdB6b67985',
+  admin: '0xbe48960593b6468AF98474996656D2925E1825df',
+  implementation: '0x44087611394B3ab2DB733A065049f7B5ebf8E1f9'
+}
+New token through upgrade proxy {
+  name: 'Mock of new token',
+  address: '0xAE60F66d9FDf4ccb172D1c672466e1AdB6b67985',
+  symbol: 'NEW',
+  supply: '93468683899196345527500000'
+}
+Token swap {
+  address: '0xF8AdFe0E6cE1537841b39d23b6C0d9cF97210dD3',
+  tokensLeftToSwap: '5000000000000000000000',
+  signerKey: '39cc67e7dbf2c162095bfc058f4b7ba2f9aa7ec006f9e28dc438c07662a3bb41'
+}
+Faucet {
+  address: '0x513C674d8ba4358319D6f6E50330A73670EE978f',
+  faucetAmount: '3000000000000000000',
+  balance: '5000000000000000000000'
+}
+Staking {
+  address: '0x1a39637F17CcAdbD7d2663cE6eb4Ad5977fAC2c6',
+  token: '0xAE60F66d9FDf4ccb172D1c672466e1AdB6b67985',
+  stakingTime: '86400',
+  stakingAmount: '2500000000000000000',
+  oracle: '0x1FCE2cf3D1a1BC980f85FEf6bF3EE17DD6eBcC8D'
+}
+```
+
 ## Goerli
 
 Here is a sample deployment in Goerli testnet:
@@ -390,47 +431,6 @@ Staking {
   stakingAmount: '2500000000000000000',
   oracle: '0x1FCE2cf3D1a1BC980f85FEf6bF3EE17DD6eBcC8D'
 }Update
-```
-
-## Ropsten
-
-Ropsten testnet:
-
-```
-Legacy token {
-  address: '0xB891D307c083A3C2F18Be67b166568A3f269Ed0e',
-  name: 'Mock of old token',
-  symbol: 'OLD',
-  supply: '93468683899196345527500000'
-}
-Upgrade proxy for new token {
-  address: '0x33e8731e1668865b2fa44ecc8B3D00aB9C2eA97e',
-  admin: '0xbe48960593b6468AF98474996656D2925E1825df',
-  implementation: '0x447Fd492Ecad9E05171c08Ab466163DCaD63afDC'
-}
-New token through upgrade proxy {
-  name: 'Mock of new token',
-  address: '0x33e8731e1668865b2fa44ecc8B3D00aB9C2eA97e',
-  symbol: 'NEW',
-  supply: '93468683899196345527500000'
-}
-Token swap {
-  address: '0xA1540F4632f2b2f0a1998d67D88d5F99fFD648CF',
-  tokensLeftToSwap: '5000000000000000000000',
-  signerKey: '39cc67e7dbf2c162095bfc058f4b7ba2f9aa7ec006f9e28dc438c07662a3bb41'
-}
-Faucet {
-  address: '0xEb9dfF898158B07Bb9AeADf12952719517eb27Fb',
-  faucetAmount: '3000000000000000000',
-  balance: '5000000000000000000000'
-}
-Staking {
-  address: '0x1b48677F85F2ca566D7E4A04893a8804154Cef74',
-  token: '0x33e8731e1668865b2fa44ecc8B3D00aB9C2eA97e',
-  stakingTime: '86400',
-  stakingAmount: '2500000000000000000',
-  oracle: '0x1FCE2cf3D1a1BC980f85FEf6bF3EE17DD6eBcC8D'
-}
 ```
 
 # Production deployment strategy
