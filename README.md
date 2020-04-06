@@ -144,19 +144,18 @@ by ERC777TokensRecipient callback.
 
 ![staking deployment](docs/deployment/staking.png)
 
-* Staking contract is in-house, written from the scratch
+* Staking contract is in-house, written from the scratch.
 
-* Users can stake their tokens and get an id for their stake
+* Users can stake their tokens. Each stake needs the exact amount of tokens defined by the staking contract.
+  The user must assign a stake id for their staking, and the stake is referred by this id in the events
+  and unstaking.
 
-* These ids can be parsed fron Ethereum event logs. A server-side component we call
-  cashier reads these events and can perform actions on user accounts based on them.
+* Later, after the stake period is expired, the user can `unstake()` their tokens using the given id.
 
-* Later, after the stake period is expired, the user can `unstake()` their tokens using the given id
-
-* User can run multiple stakes a the same time, though there is no real use case for this
+* User can run multiple stakes a the same time, though there is no real use case for this.
 
 * Staking contract has `Recoverable` trait to help users with the issues of missending wrong tokens
-  on the contract
+  on the contract.
 
 * There is a special account, `stakingOracle`, that can set the stake amount and period.
   This gives flexibility e.g. to automate staking amount to follow a predefined US dollar

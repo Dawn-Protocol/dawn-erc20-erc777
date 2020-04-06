@@ -180,16 +180,12 @@ test('Non-allocated stake ids do not exist', async () => {
 test('User can stake their tokens', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE + 10, { from: owner });
-
   // When we think the user stake should end
   const estimatedEndsAt = (await time.latest()).add(new BN(STAKE_DURATION));
-
   const stakeId = createStakeId();
   const userData = web3.eth.abi.encodeParameters(['uint8', 'uint128'], [STAKE_OWN_MSG, stakeId]);
-
   // This will create staking id 1
   const receipt = await newToken.send(staking.address, STAKE_PRICE, userData, { from: user });
-
   // Check the state is right
   assert((await staking.currentlyStaked()).toString() === STAKE_PRICE.toString());
   assert((await staking.totalStaked()).toString() === STAKE_PRICE.toString());
@@ -201,21 +197,17 @@ test('User can stake their tokens', async () => {
   const { staker, amount, endsAt } = await staking.getStakeInformation(stakeId);
   assert(staker === user);
   assert(amount.toString() === STAKE_PRICE.toString());
-
   // Must be ~5 seconds difference at the estimated time, allow some slack with block producing
   assert(Math.abs(endsAt.toNumber() - estimatedEndsAt.toNumber()) < 5);
-
   // expectEvent() does not work as the emitting contract is not `to` from the tx receitp
   // In the logs we have Send, Transfer, Staking, so taking event is the last
   const log = receipt.receipt.rawLogs[2];
   const event = decodeEvent(Staking, log, 'Staked');
-
   // Create hex string out of raw 128-bit in as a string and watch out for 0x prefix
   assert((new BN(event.stakeId)).toString(16) === stakeId.substring(2));
   assert(event.amount === STAKE_PRICE.toString());
   assert(event.staker === user);
   assert(event.endsAt === endsAt.toString());
-
   /*
   // Check events are right
   expectEvent(receipt, 'Staked', {
@@ -295,6 +287,22 @@ test('Users cannot stake or unstake while paused', async () => {
   // Unpause and we can stake again
   await staking.unpause({ from: owner });
   await newToken.send(staking.address, STAKE_PRICE, userData, { from: user });
+});
+
+
+test('User cannot reuse stakeId', async () => {
+  // Give user some tokens to stake
+  await newToken.transfer(user, STAKE_PRICE * 2, { from: owner });
+  // When we think the user stake should end
+  const stakeId = createStakeId();
+  const userData = web3.eth.abi.encodeParameters(['uint8', 'uint128'], [STAKE_OWN_MSG, stakeId]);
+  // This will create staking id 1
+  await newToken.send(staking.address, STAKE_PRICE, userData, { from: user });
+  assert(await staking.isStake(stakeId) === true);
+  await expectRevert(
+    newToken.send(staking.address, STAKE_PRICE, userData, { from: user }),
+    'stakeId taken',
+  );
 });
 
 
@@ -415,20 +423,17 @@ test('User can unstake behalf of another', async () => {
   // Create a user data for ERC-777 send()
   const stakeId = createStakeId();
   const userData = web3.eth.abi.encodeParameters(['uint8', 'uint128'], [STAKE_OWN_MSG, stakeId]);
-  // This will create staking id 1
-  const startTime = (await time.latest()).toNumber();
-  newToken.send(staking.address, STAKE_PRICE, userData, { from: user });
+  await newToken.send(staking.address, STAKE_PRICE, userData, { from: user });
   await time.increase(STAKE_DURATION + 1);
   await time.advanceBlock(); // Force a block to be mined with the new timestamp
   // user2 unstakes instead of user
   const { endsAt } = await staking.getStakeInformation(stakeId);
   const now = (await time.latest()).toNumber();
-  console.log('Differ', endsAt.toNumber() - now, 'duration', STAKE_DURATION, 'startTime', startTime, 'now', now, 'endsAt', endsAt.toNumber(), 'Durationx', endsAt.toNumber() - startTime.toNumber());
-  assert((await time.latest()).toNumber() > endsAt.toNumber());
-  const receipt = await staking.unstake(stakeId, { from: user2 });
+  assert(now > endsAt.toNumber());
+  const receipt2 = await staking.unstake(stakeId, { from: user2 });
   // Tokens where sent back to the user
   assert((await newToken.balanceOf(user)).toNumber() === STAKE_PRICE);
-  expectEvent(receipt, 'Unstaked', {
+  expectEvent(receipt2, 'Unstaked', {
     staker: user,
     // stakeId: new BN(stakeId), fails to parse logs correctly?
     amount: new BN(STAKE_PRICE),

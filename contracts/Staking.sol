@@ -134,6 +134,7 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
     require(stakeId != 0x0, "Invalid stake id");
     require(staker != address(0x0), "Bad staker");
     require(amount == stakingAmount, "Wrong staking amount");
+    require(!isStake(stakeId), "stakeId taken");
 
     uint endsAt = now + stakingTime;
 
@@ -173,7 +174,6 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
    * It is possible to unstake on behalf of others.
    */
   function unstake(uint128 stakeId) public whenNotPaused {
-    address sender = _msgSender();
     Stake memory s = stakes[stakeId];
     require(s.endsAt != 0, "Already unstaked");
     require(now >= s.endsAt, "Unstaking too soon");
