@@ -8,6 +8,7 @@
  * https://ethereum.stackexchange.com/questions/67407/how-to-deploy-a-smart-contract-using-infura-and-web3js1-x-x-on-nodejs
  */
 
+import { resolve } from 'path';
 import { Proxy, ZWeb3, Contracts } from '@openzeppelin/upgrades';
 import * as envalid from 'envalid';
 import { Account } from 'eth-lib/lib'; // https://github.com/MaiaVictor/eth-lib/blob/master/src/account.js
@@ -40,10 +41,15 @@ const inputs = {
   // "goerli" or "ropsten"
   network: envalid.str(),
 
+  // Needed to verify deployed contracts on EtherScan
+  etherscanAPIKey: envalid.str(),
+
 };
 
 // Get config file from the command line or fallback to the default
 const configPath = process.argv[2] || 'secrets/testnet.env.ini';
+
+console.log('Using configuration file', resolve(configPath));
 
 // https://www.npmjs.com/package/envalid
 const envOptions = {
@@ -138,8 +144,8 @@ async function deploy(): Promise<void> {
   // This one is big so go with a lot of gas
   const tokenSwap = await deployContract('tokenSwap', TokenSwap, [], { from: deployer, gas: 4_000_000 });
 
-  // Faucet gives 3 tokens at a time 3_000_000_000_000_000_000
-  const faucetAmount = '3000000000000000000';
+  // Faucet gives 300 tokens at a time 300_000_000_000_000_000_000
+  const faucetAmount = '300000000000000000000';
   const faucet = await deployContract('faucet', TokenFaucet, [oldToken.address, faucetAmount], { from: deployer, gas: 3_000_000 });
 
   const staking = await deployContract('staking', Staking, [], { from: deployer, gas: 4_000_000 });

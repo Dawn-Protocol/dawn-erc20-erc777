@@ -2,7 +2,9 @@
  * Command line deployment utils.
  */
 
-import { ZWeb3 } from '@openzeppelin/upgrades';
+import { ZWeb3, flattenSourceCode } from '@openzeppelin/upgrades';
+import { publishToEtherscan } from './verifier';
+import { Contract } from 'web3-eth-contract';
 
 // Need JS style import
 // https://github.com/ethereum/web3.js/tree/1.x/packages/web3-providers-ws
@@ -84,6 +86,17 @@ export function createProvider(privateKeys: string[], infuraProjectId: string, n
   return walletProvider;
 }
 
+
+function getConstructorABI(_Contract: any): any {
+  const { abi } = _Contract.schema;
+  for (const f of abi) {
+    if (f.type === 'constructor') {
+      return f;
+    }
+  }
+  return null;
+}
+
 /**
  * Deploy a new contract with a log of debug around what's happening.
  * @param id internally referred contract variable
@@ -92,7 +105,7 @@ export function createProvider(privateKeys: string[], infuraProjectId: string, n
  * @param txParams Deployment transaction parameters like from and gas
  * @return Contract instance
  */
-export async function deployContract(id: string, _Contract: any, parameters: any, txParams: any): Promise<any> {
+export async function deployContract(id: string, _Contract: any, parameters: any, txParams: any, etherscanAPIKey: string = null): Promise<any> {
   // Check we have gas money for the deployment
 
   const { web3 } = ZWeb3;
@@ -100,14 +113,31 @@ export async function deployContract(id: string, _Contract: any, parameters: any
 
   const weiBalance = await web3.eth.getBalance(account);
   const ethBalance = web3.utils.fromWei(weiBalance, 'ether');
+  let constructorArgumentsEncoded = '';
 
   console.log(`Starting to deploy contract ${id}, constructor`, parameters, 'balance left', ethBalance, 'ETH');
+
+  // Let's do ABI encoding for EtherScan verification of constructor arguments
+  if (parameters) {
+    const constructorABI = getConstructorABI(_Contract);
+    if (!constructorABI) {
+      throw new Error(`Could not find constructor for ${_Contract.schema.contractName}`);
+    }
+    const types = constructorABI.inputs;
+    constructorArgumentsEncoded = web3.eth.abi.encodeParameters(types, parameters);
+    console.log('Constructor arguments are', constructorABI.inputs, 'and encoded as', constructorArgumentsEncoded);
+  }
+
   const p = _Contract.new(...parameters, txParams);
   const deployed = await p;
   // console.log(deployed);
   // https://stackoverflow.com/questions/34743960/is-there-a-way-to-round-to-2-decimals-in-a-template-string
   const gasUsed = (deployed.deployment.transactionReceipt.cumulativeGasUsed / 1000).toFixed(2);
   console.log(`Deployed ${id} at ${deployed.address} gas used ${gasUsed}k`);
+
+  if(etherscanAPIKey) {
+    verifyOnEtherscan(deployed.address, _Contract.schema.contractName, constructorArgumentsEncoded, etherscanAPIKey)
+  }
 
   return _Contract.at(deployed.address);
 }
@@ -127,25 +157,31 @@ export async function deployContract(id: string, _Contract: any, parameters: any
 
 // TODO: Wait reply from OZ https://forum.openzeppelin.com/t/openzeppelin-project-file-with-dynamic-constructor-arguments/2489
 
-/*
-export async function verifyOnEtherscan(contractAddress: string, contractName: string, parameter: any, etherscanAPIKey: string): Promise<any> {
+
+export async function verifyOnEtherscan(contract: Contract, constructorArgumentsEncoded: string, etherscanAPIKey: string): Promise<any> {
 
   const remote = "etherscan";
-  const { compilerVersion, sourcePath } = this.localController.getContractSourcePath(contractName);
+  const contractName = contract.schema.contractName;
+  const compilerVersion = contract.schema.compiler.version;
+  const sourcePath = contract.schema.ast.absolutePath;
+  // const { compilerVersion, sourcePath } = this.localController.getContractSourcePath(contractName);
+  const network = contract.network;
   const contractSource = await flattenSourceCode([sourcePath]);
-  const contractAddress = this.networkFile.contracts[contractName].address;]
-  const network = await ZWeb3.getNetworkName();
 
-  await Verifier.verifyAndPublish(remote, {
+  const optimizer = null;
+  const optimizerRuns = 0;
+
+  const verifierOptions = {
     contractName,
     compilerVersion,
     optimizer,
     optimizerRuns,
     contractSource,
-    contractAddress,
-    apiKey,
+    contract.address,
+    apiKey: etherscanAPIKey,
     network: this.network,
-  });
+  };
+
+  const result = await publishToEtherscan(verifierOptions);
 }
-}
-*/
+
