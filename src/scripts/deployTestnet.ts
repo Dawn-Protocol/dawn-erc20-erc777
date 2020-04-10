@@ -77,6 +77,7 @@ async function deploy(): Promise<void> {
     infuraProjectId,
     proxyOwnerPrivateKeyHex,
     network,
+    etherscanAPIKey,
   } = envalid.cleanEnv(process.env, inputs, envOptions);
 
   // Get a websocket that connects us to Infura Ethereum node
@@ -108,7 +109,7 @@ async function deploy(): Promise<void> {
   const proxyOwner = Account.fromPrivate(`0x${proxyOwnerPrivateKeyHex}`);
 
   // Here we refer the token contract directly without going through the proxy
-  const newTokenImpl = await deployContract('newTokenImpl', DawnTokenImpl, [deployer], { from: deployer });
+  const newTokenImpl = await deployContract('newTokenImpl', DawnTokenImpl, [], { from: deployer }, etherscanAPIKey);
 
   // Proxy contract will
   // 1. Store all data, current implementation and future implementations
@@ -120,7 +121,7 @@ async function deploy(): Promise<void> {
   // Copied from
   // https://github.com/OpenZeppelin/openzeppelin-sdk/blob/master/packages/lib/test/contracts/upgradeability/AdminUpgradeabilityProxy.test.js
   const initializeData = Buffer.from('');
-  const proxy = await deployContract('proxy', DawnTokenProxy, [newTokenImpl.address, proxyOwner.address, initializeData], { from: deployer });
+  const proxy = await deployContract('proxy', DawnTokenProxy, [newTokenImpl.address, proxyOwner.address, initializeData], { from: deployer }, etherscanAPIKey);
   const proxyWrapper = new Proxy(proxy.address);
   // Proxy contract will
   // 1. Store all data, current implementation and future implementations
@@ -139,16 +140,16 @@ async function deploy(): Promise<void> {
   const newToken = DawnTokenImpl.at(proxy.address);
   await newToken.methods.initializeDawn(tokenOwnerAccount.address, 'Mock of new token', 'NEW').send({ from: deployer });
 
-  const oldToken = await deployContract('oldToken', FirstBloodTokenMock, [tokenOwnerAccount.address, 'Mock of old token', 'OLD'], { from: deployer, gas: 3_000_000 });
+  const oldToken = await deployContract('oldToken', FirstBloodTokenMock, [tokenOwnerAccount.address, 'Mock of old token', 'OLD'], { from: deployer, gas: 3_000_000 }, etherscanAPIKey);
 
   // This one is big so go with a lot of gas
-  const tokenSwap = await deployContract('tokenSwap', TokenSwap, [], { from: deployer, gas: 4_000_000 });
+  const tokenSwap = await deployContract('tokenSwap', TokenSwap, [], { from: deployer, gas: 4_000_000 }, etherscanAPIKey);
 
   // Faucet gives 300 tokens at a time 300_000_000_000_000_000_000
   const faucetAmount = '300000000000000000000';
-  const faucet = await deployContract('faucet', TokenFaucet, [oldToken.address, faucetAmount], { from: deployer, gas: 3_000_000 });
+  const faucet = await deployContract('faucet', TokenFaucet, [oldToken.address, faucetAmount], { from: deployer, gas: 3_000_000 }, etherscanAPIKey);
 
-  const staking = await deployContract('staking', Staking, [], { from: deployer, gas: 4_000_000 });
+  const staking = await deployContract('staking', Staking, [], { from: deployer, gas: 4_000_000 }, etherscanAPIKey);
 
   console.log('Initializing token swap');
   let args = [

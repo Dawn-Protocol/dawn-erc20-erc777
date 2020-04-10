@@ -4,7 +4,6 @@
 
 import { ZWeb3, flattenSourceCode } from '@openzeppelin/upgrades';
 import { publishToEtherscan } from './verifier';
-import { Contract } from 'web3-eth-contract';
 
 // Need JS style import
 // https://github.com/ethereum/web3.js/tree/1.x/packages/web3-providers-ws
@@ -87,12 +86,51 @@ export function createProvider(privateKeys: string[], infuraProjectId: string, n
 }
 
 
+/**
+ * Verifies a deployed contract on EtherScan
+ *
+ * See https://github.com/OpenZeppelin/openzeppelin-sdk/blob/62e0a9869340693dba55bc14ef72d7c120697bc3/packages/cli/src/models/network/NetworkController.ts#L491
+ * for inspiration.
+ *
+ * @param contract A deployed web3.eth.Contract
+ * @param constructorArgumentsEncoded The original ABI encoded tightly packed Solidity parameters passed to the constructor of the contract, or empty string
+ * @param etherscanAPIKey Your EtherScan.io API key
+ */
+export async function verifyOnEtherscan(contract: any, constructorArgumentsEncoded: string, etherscanAPIKey: string): Promise<any> {
+  const { contractName } = contract.schema;
+  const compilerVersion = contract.schema.compiler.version;
+  const sourcePath = contract.schema.ast.absolutePath;
+  // const { compilerVersion, sourcePath } = this.localController.getContractSourcePath(contractName);
+  const network = await ZWeb3.getNetworkName();
+  const contractAddress = contract.address;
+  const contractSource = await flattenSourceCode([sourcePath]);
+  const metadata = JSON.parse(contract.schema.metadata);
+  const optimizer = metadata.settings.optimizer.enabled;
+  const optimizerRuns = metadata.settings.optimizer.runs;
+
+  const verifierOptions = {
+    contractName,
+    compilerVersion,
+    optimizer,
+    optimizerRuns,
+    contractSource,
+    contractAddress,
+    network,
+    constructorArgumentsEncoded,
+    apiKey: etherscanAPIKey,
+  };
+
+  await publishToEtherscan(verifierOptions);
+}
+
+
 function getConstructorABI(_Contract: any): any {
   const { abi } = _Contract.schema;
   for (const f of abi) {
     if (f.type === 'constructor') {
       return f;
     }
+    console.log('No match', f);
   }
   return null;
 }
@@ -105,7 +143,7 @@ function getConstructorABI(_Contract: any): any {
  * @param txParams Deployment transaction parameters like from and gas
  * @return Contract instance
  */
-export async function deployContract(id: string, _Contract: any, parameters: any, txParams: any, etherscanAPIKey: string = null): Promise<any> {
+export async function deployContract(id: string, _Contract: any, parameters: string[], txParams: any, etherscanAPIKey: string = null): Promise<any> {
   // Check we have gas money for the deployment
 
   const { web3 } = ZWeb3;
@@ -118,7 +156,7 @@ export async function deployContract(id: string, _Contract: any, parameters: any
   console.log(`Starting to deploy contract ${id}, constructor`, parameters, 'balance left', ethBalance, 'ETH');
 
   // Let's do ABI encoding for EtherScan verification of constructor arguments
-  if (parameters) {
+  if (parameters.length > 0) {
     const constructorABI = getConstructorABI(_Contract);
     if (!constructorABI) {
       throw new Error(`Could not find constructor for ${_Contract.schema.contractName}`);
@@ -135,53 +173,9 @@ export async function deployContract(id: string, _Contract: any, parameters: any
   const gasUsed = (deployed.deployment.transactionReceipt.cumulativeGasUsed / 1000).toFixed(2);
   console.log(`Deployed ${id} at ${deployed.address} gas used ${gasUsed}k`);
 
-  if(etherscanAPIKey) {
-    verifyOnEtherscan(deployed.address, _Contract.schema.contractName, constructorArgumentsEncoded, etherscanAPIKey)
+  if (etherscanAPIKey) {
+    verifyOnEtherscan(deployed, constructorArgumentsEncoded, etherscanAPIKey);
   }
 
   return _Contract.at(deployed.address);
 }
-
-
-/**
- * Verifies a deployed contract on EtherScan
- *
- * See https://github.com/OpenZeppelin/openzeppelin-sdk/blob/62e0a9869340693dba55bc14ef72d7c120697bc3/packages/cli/src/models/network/NetworkController.ts#L491
- * for inspiration.
- *
- * @param contractAddress
- * @param contractName
- * @param parameter
- * @param etherscanAPIKey
- */
-
-// TODO: Wait reply from OZ https://forum.openzeppelin.com/t/openzeppelin-project-file-with-dynamic-constructor-arguments/2489
-
-
-export async function verifyOnEtherscan(contract: Contract, constructorArgumentsEncoded: string, etherscanAPIKey: string): Promise<any> {
-
-  const remote = "etherscan";
-  const contractName = contract.schema.contractName;
-  const compilerVersion = contract.schema.compiler.version;
-  const sourcePath = contract.schema.ast.absolutePath;
-  // const { compilerVersion, sourcePath } = this.localController.getContractSourcePath(contractName);
-  const network = contract.network;
-  const contractSource = await flattenSourceCode([sourcePath]);
-
-  const optimizer = null;
-  const optimizerRuns = 0;
-
-  const verifierOptions = {
-    contractName,
-    compilerVersion,
-    optimizer,
-    optimizerRuns,
-    contractSource,
-    contract.address,
-    apiKey: etherscanAPIKey,
-    network: this.network,
-  };
-
-  const result = await publishToEtherscan(verifierOptions);
-}
-
