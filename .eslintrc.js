@@ -28,7 +28,7 @@ module.exports = {
     'no-await-in-loop': 'off', // Readability
     'import/prefer-default-export': 'off', // Export individual functions
     'max-len': ["error", {
-      code: 140,
+      code: 180,
       ignoreComments: true,
       ignoreTrailingComments: true,
       ignoreStrings: true,

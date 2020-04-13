@@ -3,7 +3,6 @@
  */
 
 import { ZWeb3, flattenSourceCode } from '@openzeppelin/upgrades';
-import { contract } from '@openzeppelin/test-environment';
 import { promises as fs } from 'fs';
 import { publishToEtherscan } from './verifier';
 
