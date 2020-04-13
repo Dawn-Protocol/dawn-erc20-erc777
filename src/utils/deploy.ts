@@ -3,6 +3,8 @@
  */
 
 import { ZWeb3, flattenSourceCode } from '@openzeppelin/upgrades';
+import { contract } from '@openzeppelin/test-environment';
+import { promises as fs } from 'fs';
 import { publishToEtherscan } from './verifier';
 
 // Need JS style import
@@ -108,6 +110,14 @@ export async function verifyOnEtherscan(contract: any, constructorArgumentsEncod
   const optimizer = metadata.settings.optimizer.enabled;
   const optimizerRuns = metadata.settings.optimizer.runs;
 
+  // EtherScan wants this input without 0x prefix
+  let constructorArgumentsEncodedClean;
+  if (constructorArgumentsEncoded.startsWith('0x')) {
+    constructorArgumentsEncodedClean = constructorArgumentsEncoded.substring(2);
+  } else {
+    constructorArgumentsEncodedClean = constructorArgumentsEncoded;
+  }
+
   const verifierOptions = {
     contractName,
     compilerVersion,
@@ -116,9 +126,29 @@ export async function verifyOnEtherscan(contract: any, constructorArgumentsEncod
     contractSource,
     contractAddress,
     network,
-    constructorArgumentsEncoded,
+    constructorArgumentsEncoded: constructorArgumentsEncodedClean,
     apiKey: etherscanAPIKey,
   };
+
+  const { contractSource: _, ...outOptions } = verifierOptions;
+
+  // Write out flattened source code so we can manually rerun this operations on EtherScan if needed
+  const targetDir = 'build/flattened';
+  await fs.mkdir(targetDir, { recursive: true });
+  const flattenFile = `${targetDir}/${contractName}.sol`;
+  const optionsFile = `${targetDir}/${contractName}.json`;
+  await fs.writeFile(flattenFile, contractSource);
+  await fs.writeFile(optionsFile, JSON.stringify(outOptions, null, 4)); // https://stackoverflow.com/a/5670892/315168
+
+  if (constructorArgumentsEncodedClean) {
+    // Currently etherscan API cannot verify this - a support ticket has been filed.
+    // You can still manually verify the contract if you input the data from the files
+    // written above to EtherScan UI,
+    console.error('Cannot verify contracts with constructor arguments, please manually verify using given files');
+    return;
+  }
+
+  console.log('Verifying options', outOptions, 'Flattened source code written to', optionsFile);
 
   await publishToEtherscan(verifierOptions);
 }
@@ -141,9 +171,16 @@ function getConstructorABI(_Contract: any): any {
  * @param _Contract From Contracts.getFromLocal()
  * @param parameters Array of arguments passed to the contract constructor
  * @param txParams Deployment transaction parameters like from and gas
+ * @param etherscanAPIKey: Your API key to Etherscan if you want to verify the contract
  * @return Contract instance
  */
-export async function deployContract(id: string, _Contract: any, parameters: string[], txParams: any, etherscanAPIKey: string = null): Promise<any> {
+export async function deployContract(
+  id: string,
+  _Contract: any,
+  parameters: string[],
+  txParams: any,
+  etherscanAPIKey: string = null,
+): Promise<any> {
   // Check we have gas money for the deployment
 
   const { web3 } = ZWeb3;
@@ -174,7 +211,18 @@ export async function deployContract(id: string, _Contract: any, parameters: str
   console.log(`Deployed ${id} at ${deployed.address} gas used ${gasUsed}k`);
 
   if (etherscanAPIKey) {
-    verifyOnEtherscan(deployed, constructorArgumentsEncoded, etherscanAPIKey);
+    console.log('Verifying', deployed.address, 'on EtherScan, constructor payload is', constructorArgumentsEncoded);
+
+    const network = await ZWeb3.getNetworkName();
+    if (network === 'goerli') {
+      // Because mining is so fast, it migth be that Etherscan has not yet seen a new contract
+      // and would fail with  Unable to locate ContractCode at 0xD88a6129E2D8786D5d88ba41CC302C020A0356E0
+      // TOOO: Fix verifier so that it automatically retries "Unable to locate ContractCode" errors.
+      console.log('Hack wait for EtherScan to catch up on Goerli');
+      await new Promise((resolve) => setTimeout(resolve, 30_000));
+    }
+
+    await verifyOnEtherscan(deployed, constructorArgumentsEncoded, etherscanAPIKey);
   }
 
   return _Contract.at(deployed.address);

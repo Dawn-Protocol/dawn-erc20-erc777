@@ -90,22 +90,26 @@ export async function publishToEtherscan(params: VerifierOptions): Promise<void 
   const networkSubdomain = network === 'mainnet' ? '' : `${network}.`;
   const etherscanContractUrl = `https://${networkSubdomain}etherscan.io/address`;
 
+  const data = {
+    apikey: params.apiKey,
+    module: 'contract',
+    action: 'verifysourcecode',
+    contractaddress: contractAddress,
+    sourceCode: params.contractSource,
+    contractname: params.contractName,
+    compilerversion: compiler,
+    optimizationUsed: optimizerStatus,
+    constructorArguements: params.constructorArguments,
+    runs: params.optimizerRuns,
+  };
+
+  // console.log('data', data);
+
   try {
     const response = await axios.request({
       method: 'POST',
       url: etherscanApiUrl,
-      data: stringify({
-        apikey: params.apiKey,
-        module: 'contract',
-        action: 'verifysourcecode',
-        contractaddress: contractAddress,
-        sourceCode: params.contractSource,
-        contractname: params.contractName,
-        compilerversion: compiler,
-        optimizationUsed: optimizerStatus,
-        constructorArguments: params.constructorArguments,
-        runs: params.optimizerRuns,
-      }),
+      data: stringify(data),
       headers: {
         'Content-type': 'application/x-www-form-urlencoded',
       },
