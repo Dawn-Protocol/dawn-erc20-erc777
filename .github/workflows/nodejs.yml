@@ -29,5 +29,6 @@ jobs:
     - run: npm ls && exit 0
     - run: npm run generate
     - run: npm test
+    - run: npm run lint
       env:
         CI: true

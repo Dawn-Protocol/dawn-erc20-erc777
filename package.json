@@ -12,7 +12,8 @@
   "scripts": {
     "generate": "truffle compile",
     "test": "jest && truffle test conformance/ERC777.js",
-    "tsc": "tsc --noEmit"
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --ext .ts tests/ src/"
   },
   "keywords": [
     "solidity",
