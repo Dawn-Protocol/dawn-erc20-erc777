@@ -6,7 +6,7 @@
 
 This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](https://firstblood.io).
 
-![badge](https://github.com/Dawn-Protocol/dawn-erc20-erc777/workflows/nodejs/badge.svg)
+![badge](https://github.com/Dawn-Protocol/dawn-erc20-erc777/workflows/Node.js%20CI/badge.svg)
 
 # Introduction
 
