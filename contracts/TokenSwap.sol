@@ -106,8 +106,8 @@ contract TokenSwap is Initializable, ReentrancyGuard, Pausable, Ownable, Recover
   /**
    * A server-side whitelisted address can swap their tokens.
    *
-   * @note After whitelisted once, the address can call this multiple times. This is intentional behavior.
-   *       As whitelisting per transaction is extra complexite that does not server any business goal.
+   * Please note that after whitelisted once, the address can call this multiple times. This is intentional behavior.
+   * As whitelisting per transaction is extra complexite that does not server any business goal.
    *
    */
   function swapTokensForSender(uint amount, uint8 v, bytes32 r, bytes32 s) public whenNotPaused {

@@ -4,6 +4,9 @@ import '../TokenSwap.sol';
 
 /**
  * A TokenSwap with additional functionality added for tests.
+ *
+ * Note: This should be an independent contract, as it has pure functions only,
+ * but for the legacy reasons it is subcontract of TokenSwap.
  */
 contract TestTokenSwap is TokenSwap {
 

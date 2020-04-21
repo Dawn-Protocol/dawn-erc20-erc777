@@ -16,7 +16,7 @@ const [
 // For this account, we need to also have our private key
 const signerPrivateKey = '0x39cc67e7dbf2c162095bfc058f4b7ba2f9aa7ec006f9e28dc438c07662a3bb41';
 
-const TokenSwap = contract.fromArtifact('TokenSwap');
+const TokenSwap = contract.fromArtifact('TestTokenSwap');
 
 let tokenSwap = null; // TokenSwap
 

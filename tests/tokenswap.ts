@@ -38,7 +38,7 @@ const SWAP_BUDGET = new BN('900') * new BN('10e18');
 // Loads a compiled contract using OpenZeppelin test-environment
 const DawnTokenImpl = contract.fromArtifact('DawnTokenImpl');
 const FirstBloodTokenMock = contract.fromArtifact('FirstBloodTokenMock');
-const TokenSwap = contract.fromArtifact('TokenSwap');
+const TokenSwap = contract.fromArtifact('TestTokenSwap');
 const DawnTokenProxy = contract.fromArtifact('DawnTokenProxy'); // AdminUpgradeabilityProxy subclass
 
 let proxyContract = null; // DawnTokenProxy depoyment, AdminUpgradeabilityProxy
@@ -259,18 +259,11 @@ test('Tokens can be send to burn', async () => {
 
   await tokenSwap.swapTokensForSender(amount, v, r, s, { from: user2 });
 
-  // New token amount on the token swap smart contract decreased
-  assert((await tokenSwap.getCurrentlySwappedSupply()).eq(amount));
-
   // Send to 0x0
   await tokenSwap.burn(amount, { from: owner });
 
-  // New token amount on the token swap smart contract decreased
-  assert((await tokenSwap.getCurrentlySwappedSupply()).isZero());
-
   // We have sent tokens to 0x0 to die
   const zeroAddressBalance = await oldToken.balanceOf(constants.ZERO_ADDRESS);
-
   assert(zeroAddressBalance.eq(amount));
 });
 
