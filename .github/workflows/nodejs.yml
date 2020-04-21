@@ -30,7 +30,7 @@ jobs:
     - name: Output used NPM packages
       run: npm ls || exit 0
     - name: Truffle compilation
-    - run: npm run generate
+      run: npm run generate
     - name: Jest tests
       run: npm run jest
     - name: ERC-777 conformance tests
