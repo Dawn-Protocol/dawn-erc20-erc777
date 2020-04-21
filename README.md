@@ -359,35 +359,35 @@ The contracts are currently deployed on Ropsten testnet:
 
 ```
 Legacy token {
-  address: '0x6a5d2F16E9D2113d568064AEec93Fbd6c195Ca39',
+  address: '0x9517FC874877A4510A3dE617d0c2517D29E5aD32',
   name: 'Mock of old token',
   symbol: 'OLD',
   supply: '93468683899196345527500000'
 }
 Upgrade proxy for new token {
-  address: '0xAE60F66d9FDf4ccb172D1c672466e1AdB6b67985',
+  address: '0x59104320Ee5A3bd286AD7017Ad4337d8Bfbd6C45',
   admin: '0xbe48960593b6468AF98474996656D2925E1825df',
-  implementation: '0x44087611394B3ab2DB733A065049f7B5ebf8E1f9'
+  implementation: '0xB993bE16857dB18fF8A04739654334aDb4164CAE'
 }
 New token through upgrade proxy {
   name: 'Mock of new token',
-  address: '0xAE60F66d9FDf4ccb172D1c672466e1AdB6b67985',
+  address: '0x59104320Ee5A3bd286AD7017Ad4337d8Bfbd6C45',
   symbol: 'NEW',
   supply: '93468683899196345527500000'
 }
 Token swap {
-  address: '0xF8AdFe0E6cE1537841b39d23b6C0d9cF97210dD3',
+  address: '0x886263505cabBE7312aA3DAEE3d92Fa7D3d0779a',
   tokensLeftToSwap: '5000000000000000000000',
   signerKey: '39cc67e7dbf2c162095bfc058f4b7ba2f9aa7ec006f9e28dc438c07662a3bb41'
 }
 Faucet {
-  address: '0x513C674d8ba4358319D6f6E50330A73670EE978f',
-  faucetAmount: '3000000000000000000',
+  address: '0xC5dec1bB818fbC753D8aFE3aC9275268F8204695',
+  faucetAmount: '300000000000000000000',
   balance: '5000000000000000000000'
 }
 Staking {
-  address: '0x1a39637F17CcAdbD7d2663cE6eb4Ad5977fAC2c6',
-  token: '0xAE60F66d9FDf4ccb172D1c672466e1AdB6b67985',
+  address: '0xD031b55e583d842e42b72cf98f834adF78760e73',
+  token: '0x59104320Ee5A3bd286AD7017Ad4337d8Bfbd6C45',
   stakingTime: '86400',
   stakingAmount: '2500000000000000000',
   oracle: '0x1FCE2cf3D1a1BC980f85FEf6bF3EE17DD6eBcC8D'

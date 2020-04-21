@@ -144,11 +144,12 @@ async function deploy(): Promise<void> {
   // Call pattern here is standard web3.contract, not OpenZeppelin one
   // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#methods-mymethod-send
 
+  // Ropsten gas usage:
+  // Deployed newTokenImpl at 0xB993bE16857dB18fF8A04739654334aDb4164CAE gas used 3771.14k
   console.log('Initializing new token at proxy address space of', proxy.address);
   const newToken = DawnTokenImpl.at(proxy.address);
   await newToken.methods.initializeDawn(tokenOwnerAccount.address, 'Mock of new token', 'NEW').send({ from: deployer });
 
-  // This one is big so go with a lot of gas
   const tokenSwap = await deployContract('tokenSwap', TokenSwap, [], { from: deployer, gas: 5_000_000 }, etherscanAPIKey);
 
   // Faucet gives 300 tokens at a time 300_000_000_000_000_000_000
