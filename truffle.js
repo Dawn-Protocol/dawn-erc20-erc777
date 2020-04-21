@@ -59,6 +59,13 @@ module.exports = {
       // Can also be set to "native" to use a native solc
       // docker: false, // Use a version obtained through docker
       parser: 'solcjs', // Leverages solc-js purely for speedy parsing
+
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 1500,
+        },
+      },
     },
   },
   api_keys: {

@@ -17,6 +17,7 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 import assert = require('assert');
 
+const ETHERSCAN_DELAY = 60_000;
 
 /**
   * Prepare a new deployment account.
@@ -88,7 +89,10 @@ export function createProvider(privateKeys: string[], infuraProjectId: string, n
 
 
 /**
- * Verifies a deployed contract on EtherScan
+ * Verifies a deployed contract on EtherScan.
+ *
+ * Writes the flattened output and used parameters in build files,
+ * so you can also later manually verify on EtherScan if the API fails.
  *
  * See https://github.com/OpenZeppelin/openzeppelin-sdk/blob/62e0a9869340693dba55bc14ef72d7c120697bc3/packages/cli/src/models/network/NetworkController.ts#L491
  * for inspiration.
@@ -125,7 +129,7 @@ export async function verifyOnEtherscan(contract: any, constructorArgumentsEncod
     contractSource,
     contractAddress,
     network,
-    constructorArgumentsEncoded: constructorArgumentsEncodedClean,
+    constructorArguments: constructorArgumentsEncodedClean,
     apiKey: etherscanAPIKey,
   };
 
@@ -139,15 +143,7 @@ export async function verifyOnEtherscan(contract: any, constructorArgumentsEncod
   await fs.writeFile(flattenFile, contractSource);
   await fs.writeFile(optionsFile, JSON.stringify(outOptions, null, 4)); // https://stackoverflow.com/a/5670892/315168
 
-  if (constructorArgumentsEncodedClean) {
-    // Currently etherscan API cannot verify this - a support ticket has been filed.
-    // You can still manually verify the contract if you input the data from the files
-    // written above to EtherScan UI,
-    console.error('Cannot verify contracts with constructor arguments, please manually verify using given files');
-    return;
-  }
-
-  console.log('Verifying options', outOptions, 'Flattened source code written to', optionsFile);
+  console.log('Verifying contract with options', outOptions, 'and flattened source code written to', optionsFile);
 
   await publishToEtherscan(verifierOptions);
 }
@@ -199,7 +195,7 @@ export async function deployContract(
     }
     const types = constructorABI.inputs;
     constructorArgumentsEncoded = web3.eth.abi.encodeParameters(types, parameters);
-    console.log('Constructor arguments are', constructorABI.inputs, 'and encoded as', constructorArgumentsEncoded);
+    // console.log('Constructor arguments are', constructorABI.inputs, 'and encoded as', constructorArgumentsEncoded);
   }
 
   const p = _Contract.new(...parameters, txParams);
@@ -210,16 +206,15 @@ export async function deployContract(
   console.log(`Deployed ${id} at ${deployed.address} gas used ${gasUsed}k`);
 
   if (etherscanAPIKey) {
-    console.log('Verifying', deployed.address, 'on EtherScan, constructor payload is', constructorArgumentsEncoded);
-
-    const network = await ZWeb3.getNetworkName();
-    if (network === 'goerli' || network === 'ropsten') {
-      // Because mining is so fast, it migth be that Etherscan has not yet seen a new contract
-      // and would fail with  Unable to locate ContractCode at 0xD88a6129E2D8786D5d88ba41CC302C020A0356E0
-      // TOOO: Fix verifier so that it automatically retries "Unable to locate ContractCode" errors.
-      console.log('Hack wait for EtherScan to catch up on the deployed contract data');
-      await new Promise((resolve) => setTimeout(resolve, 30_000));
-    }
+    // It migth be that Etherscan internal database has not yet seen the deployed contract.
+    // and would fail with:
+    //
+    // Unable to locate ContractCode at 0xD88a6129E2D8786D5d88ba41CC302C020A0356E0
+    //
+    // Now we just sleep and hope EtherScan catches up
+    // TOOO: Fix verifier so that it automatically retries "Unable to locate ContractCode" errors.
+    console.log('Waiting for EtherScan to catch up on the deployed contract data with 45 seconds delay');
+    await new Promise((resolve) => setTimeout(resolve, ETHERSCAN_DELAY));
 
     await verifyOnEtherscan(deployed, constructorArgumentsEncoded, etherscanAPIKey);
   }

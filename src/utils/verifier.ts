@@ -103,7 +103,7 @@ export async function publishToEtherscan(params: VerifierOptions): Promise<void 
     runs: params.optimizerRuns,
   };
 
-  // console.log('data', data);
+  // console.log('Args', data.constructorArguements);
 
   try {
     const response = await axios.request({

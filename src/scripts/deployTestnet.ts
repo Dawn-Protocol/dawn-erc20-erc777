@@ -108,12 +108,15 @@ async function deploy(): Promise<void> {
   const oracleAccount = Account.fromPrivate(`0x${oraclePrivateKeyHex}`);
   const proxyOwner = Account.fromPrivate(`0x${proxyOwnerPrivateKeyHex}`);
 
+  // Gas used 1789.89k on Goerli
+  const staking = await deployContract('staking', Staking, [], { from: deployer, gas: 4_000_000 }, etherscanAPIKey);
+
   // An example of legacy token with its source code recompiled
   const oldToken = await deployContract('oldToken', FirstBloodTokenMock, [tokenOwnerAccount.address, 'Mock of old token', 'OLD'], { from: deployer, gas: 3_000_000 }, etherscanAPIKey);
 
-  const staking = await deployContract('staking', Staking, [], { from: deployer, gas: 4_000_000 }, etherscanAPIKey);
-
   // Here we refer the token contract directly without going through the proxy
+  // This will take a LOT of gas
+  //
   const newTokenImpl = await deployContract('newTokenImpl', DawnTokenImpl, [], { from: deployer }, etherscanAPIKey);
 
   // Proxy contract will
@@ -146,11 +149,11 @@ async function deploy(): Promise<void> {
   await newToken.methods.initializeDawn(tokenOwnerAccount.address, 'Mock of new token', 'NEW').send({ from: deployer });
 
   // This one is big so go with a lot of gas
-  const tokenSwap = await deployContract('tokenSwap', TokenSwap, [], { from: deployer, gas: 4_000_000 }, etherscanAPIKey);
+  const tokenSwap = await deployContract('tokenSwap', TokenSwap, [], { from: deployer, gas: 5_000_000 }, etherscanAPIKey);
 
   // Faucet gives 300 tokens at a time 300_000_000_000_000_000_000
   const faucetAmount = '300000000000000000000';
-  const faucet = await deployContract('faucet', TokenFaucet, [oldToken.address, faucetAmount], { from: deployer, gas: 3_000_000 }, etherscanAPIKey);
+  const faucet = await deployContract('faucet', TokenFaucet, [oldToken.address, faucetAmount], { from: deployer, gas: 4_000_000 }, etherscanAPIKey);
 
   console.log('Initializing token swap');
   let args = [
