@@ -4,6 +4,7 @@ pragma solidity ^0.5.0;
 import './ERC777Overridable.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol';
 import './Recoverable.sol';
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 
 /**
@@ -95,5 +96,8 @@ contract DawnTokenImpl is ERC777Overridable, Recoverable, Pausable {
   function operatorBurn(address account, uint256 amount, bytes calldata data, bytes calldata operatorData) external whenNotPaused {
     operatorBurnInternal(account, amount, data, operatorData);
   }
+
+   // Upgradeability - add some space
+  uint256[50] private ______gap;
 
 }

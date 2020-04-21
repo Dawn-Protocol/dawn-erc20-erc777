@@ -213,11 +213,11 @@ export async function deployContract(
     console.log('Verifying', deployed.address, 'on EtherScan, constructor payload is', constructorArgumentsEncoded);
 
     const network = await ZWeb3.getNetworkName();
-    if (network === 'goerli') {
+    if (network === 'goerli' || network === 'ropsten') {
       // Because mining is so fast, it migth be that Etherscan has not yet seen a new contract
       // and would fail with  Unable to locate ContractCode at 0xD88a6129E2D8786D5d88ba41CC302C020A0356E0
       // TOOO: Fix verifier so that it automatically retries "Unable to locate ContractCode" errors.
-      console.log('Hack wait for EtherScan to catch up on Goerli');
+      console.log('Hack wait for EtherScan to catch up on the deployed contract data');
       await new Promise((resolve) => setTimeout(resolve, 30_000));
     }
 

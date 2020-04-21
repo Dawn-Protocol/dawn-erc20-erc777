@@ -5,6 +5,7 @@ pragma solidity ^0.5.0;
 import '@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import './Recoverable.sol';
 
 /**
@@ -19,7 +20,7 @@ import './Recoverable.sol';
  * which is a huge mess.
  *
  */
-contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
+contract TokenSwap is Initializable, ReentrancyGuard, Pausable, Ownable, Recoverable {
 
   IERC20 oldToken;
   IERC20 newToken;
@@ -49,6 +50,9 @@ contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
   function initialize(address owner, address signer, address _oldToken, address _newToken, address _burnDestination)
     public initializer {
 
+    // Note: ReentrancyGuard.initialze() was added in OpenZeppelin SDK 2.6.0, we are using 2.5.0
+    // ReentrancyGuard.initialize();
+
     // Deployer account holds temporary ownership until the setup is done
     Ownable.initialize(_msgSender());
     setBurnDestination(_burnDestination);
@@ -63,7 +67,7 @@ contract TokenSwap is Initializable, Pausable, Ownable, Recoverable {
 
   }
 
-  function _swap(address whom, uint amount) internal {
+  function _swap(address whom, uint amount) internal nonReentrant {
     // Move old tokens to this contract
     address swapper = address(this);
     // We have added some user friendly error messages here if they

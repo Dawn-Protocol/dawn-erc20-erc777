@@ -33,4 +33,7 @@ contract Recoverable is Ownable {
   function tokensToBeReturned(IERC20 token) public view returns (uint) {
     return token.balanceOf(address(this));
   }
+
+  // Upgradeability - add some space
+  uint256[50] private ______gap;
 }

@@ -5,6 +5,7 @@ pragma solidity ^0.5.0;
 import "@openzeppelin/contracts/token/ERC777/IERC777.sol";
 import "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
 import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import '@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol';
 
 import './Recoverable.sol';
@@ -23,7 +24,7 @@ import './Recoverable.sol';
  * to the contract using ERC-777 send().
  *
  */
-contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
+contract Staking is Initializable, ReentrancyGuard, Pausable, Recoverable, IERC777Recipient {
 
   // A single staking event
   struct Stake {
@@ -106,6 +107,9 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
     // Call parent initializers
     Recoverable.initialize(_msgSender());
 
+    // Note: ReentrancyGuard.initialze() was added in OpenZeppelin SDK 2.6.0, we are using 2.5.0
+    // ReentrancyGuard.initialize();
+
     // Initial parameters are set by the owner,
     // before we give the control to the real oracle
     stakePriceOracle = _msgSender();
@@ -129,7 +133,7 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
    * @param staker On whose behalf we are staking
    * @param amount Amount of tokens to stake
    */
-  function stakeInternal(uint128 stakeId, address staker, uint amount) internal whenNotPaused {
+  function stakeInternal(uint128 stakeId, address staker, uint amount) internal whenNotPaused nonReentrant {
 
     require(stakeId != 0x0, "Invalid stake id");
     require(staker != address(0x0), "Bad staker");
@@ -173,7 +177,7 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
    *
    * It is possible to unstake on behalf of others.
    */
-  function unstake(uint128 stakeId) public whenNotPaused {
+  function unstake(uint128 stakeId) public whenNotPaused nonReentrant {
     Stake memory s = stakes[stakeId];
     require(s.endsAt != 0, "Already unstaked");
     require(now >= s.endsAt, "Unstaking too soon");
@@ -271,5 +275,9 @@ contract Staking is Initializable, Pausable, Recoverable, IERC777Recipient {
 
     stakeInternal(stakeId, staker, amount);
   }
+
+
+  // Upgradeability - add some space
+  uint256[50] private ______gap;
 
 }
