@@ -6,7 +6,7 @@ import "../DawnTokenImpl.sol";
  * This contract is used in the test suite to see that we can successfully upgrade
  * the token contract to a new version: both code + data.
  */
-contract UpgradedTokenTestimpl is DawnTokenImpl {
+contract UpgradedTokenTestImpl is DawnTokenImpl {
 
   // We add a new variable
   mapping(address=>uint256) public funnyNumbers;
