@@ -6,6 +6,8 @@ import { ZWeb3, flattenSourceCode } from '@openzeppelin/upgrades';
 import { promises as fs } from 'fs';
 import { publishToEtherscan } from './verifier';
 
+import assert = require('assert');
+
 // Need JS style import
 // https://github.com/ethereum/web3.js/tree/1.x/packages/web3-providers-ws
 // https://github.com/ethereum/web3.js/blob/1.x/packages/web3-providers-ws/src/index.js
@@ -15,8 +17,7 @@ const Web3WsProvider = require('web3-providers-ws');
 // https://github.com/trufflesuite/truffle/blob/develop/packages/hdwallet-provider/src/index.ts
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
-import assert = require('assert');
-
+// How long we wait after the deployment TX before trying to verify a contract on EtherScan
 const ETHERSCAN_DELAY = 60_000;
 
 /**
@@ -213,7 +214,7 @@ export async function deployContract(
     //
     // Now we just sleep and hope EtherScan catches up
     // TOOO: Fix verifier so that it automatically retries "Unable to locate ContractCode" errors.
-    console.log('Waiting for EtherScan to catch up on the deployed contract data with 45 seconds delay');
+    console.log(`Waiting for EtherScan to catch up on the deployed contract data with ${ETHERSCAN_DELAY} ms delay`);
     await new Promise((resolve) => setTimeout(resolve, ETHERSCAN_DELAY));
 
     await verifyOnEtherscan(deployed, constructorArgumentsEncoded, etherscanAPIKey);
