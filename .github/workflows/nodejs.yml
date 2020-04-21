@@ -24,11 +24,18 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm ci
+    - name: NPM package install in continuous integration mode
+      run: npm ci
     - run: npm run build --if-present
-    - run: npm ls || exit 0
+    - name: Output used NPM packages
+      run: npm ls || exit 0
+    - name: Truffle compilation
     - run: npm run generate
-    - run: npm test
-    - run: npm run lint
+    - name: Jest tests
+      run: npm run jest
+    - name: ERC-777 conformance tests
+      run: npm run erc777-test
+    - name: TypeScript linter
+      run: npm run lint
       env:
         CI: true

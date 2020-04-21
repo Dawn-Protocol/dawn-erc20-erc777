@@ -11,7 +11,9 @@
   ],
   "scripts": {
     "generate": "truffle compile",
-    "test": "jest && truffle test conformance/ERC777.js",
+    "test": "jest",
+    "erc777-test": "truffle test conformance/ERC777.js",
+    "jest": "jest && truffle test conformance/ERC777.js",
     "tsc": "tsc --noEmit",
     "lint": "eslint --ext .ts tests/ src/"
   },
