@@ -4,7 +4,6 @@ pragma solidity ^0.5.0;
 import './ERC777Overridable.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol';
 import './Recoverable.sol';
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 
 /**
@@ -57,7 +56,6 @@ contract DawnTokenImpl is ERC777Overridable, Recoverable, Pausable {
 
     // Mint the initial supply
     // https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package/blob/master/contracts/token/ERC777/ERC777.sol#L315
-
     _mint(manager, manager, INITIAL_SUPPLY, emptyBytes, emptyBytes);
 
   }

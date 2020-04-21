@@ -182,15 +182,14 @@ contract Staking is Initializable, ReentrancyGuard, Pausable, Recoverable, IERC7
     require(s.endsAt != 0, "Already unstaked");
     require(now >= s.endsAt, "Unstaking too soon");
 
-    // Use ERC-777 to send tokens to the wallet of the owner
-    token.send(s.owner, s.amount, bytes(''));
-
     // Mark the stake released
     stakes[stakeId].endsAt = 0;
-
     currentlyStaked -= s.amount;
 
     emit Unstaked(s.owner, stakeId, s.amount);
+
+    // Use ERC-777 to send tokens to the wallet of the owner
+    token.send(s.owner, s.amount, bytes(''));
   }
 
   /**
@@ -275,9 +274,5 @@ contract Staking is Initializable, ReentrancyGuard, Pausable, Recoverable, IERC7
 
     stakeInternal(stakeId, staker, amount);
   }
-
-
-  // Upgradeability - add some space
-  uint256[50] private ______gap;
 
 }
