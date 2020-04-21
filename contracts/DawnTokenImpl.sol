@@ -33,7 +33,7 @@ contract DawnTokenImpl is ERC777Overridable, Recoverable, Pausable {
    *
    * expected array value (arg="defaultOperators", coderType="array", value="NEW")
    *
-   * @param manager The address that is going ot control Pausable functionality and also receive the initally minted tokens
+   * @param manager The address that is going ot control Pausable functionality and also receive the initially minted tokens
    * @param _name Token name
    * @param _symbol Token symbol
    */
@@ -41,7 +41,7 @@ contract DawnTokenImpl is ERC777Overridable, Recoverable, Pausable {
 
     // We set up an ERC-777 token without any default operators
     address[] memory noAddresses = new address[](0);
-    bytes memory emptyBytes = new bytes(0);
+    bytes memory emptyBytes = bytes('');
 
     ERC777Overridable.initialize(_name, _symbol, noAddresses);
 

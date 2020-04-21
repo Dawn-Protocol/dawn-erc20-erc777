@@ -75,7 +75,7 @@ contract Staking is Initializable, ReentrancyGuard, Pausable, Recoverable, IERC7
   address public stakePriceOracle;
 
   // Stakes by the user
-  mapping(uint128 => Stake) stakes;
+  mapping(uint128 => Stake) public stakes;
 
   // Staking price and period was reset
   event StakingParametersChanged(uint amount, uint time);
@@ -102,7 +102,7 @@ contract Staking is Initializable, ReentrancyGuard, Pausable, Recoverable, IERC7
    * @param _time Initial duration of the stake in seconds
    * @param _oracle Address of the initial parameters oracle
    */
-  function initialize(address _owner, address _token, uint _amount, uint _time, address _oracle) public initializer {
+  function initialize(address _owner, IERC777 _token, uint _amount, uint _time, address _oracle) public initializer {
 
     // Call parent initializers
     Recoverable.initialize(_msgSender());
@@ -119,7 +119,7 @@ contract Staking is Initializable, ReentrancyGuard, Pausable, Recoverable, IERC7
     Pausable.initialize(_owner);
     _transferOwnership(_owner);
 
-    token = IERC777(_token);
+    token = _token;
 
     // ERC-777 receiver init
     // See https://forum.openzeppelin.com/t/simple-erc777-token-example/746
@@ -133,7 +133,7 @@ contract Staking is Initializable, ReentrancyGuard, Pausable, Recoverable, IERC7
    * @param staker On whose behalf we are staking
    * @param amount Amount of tokens to stake
    */
-  function stakeInternal(uint128 stakeId, address staker, uint amount) internal whenNotPaused nonReentrant {
+  function _stakeInternal(uint128 stakeId, address staker, uint amount) internal whenNotPaused nonReentrant {
 
     require(stakeId != 0x0, "Invalid stake id");
     require(staker != address(0x0), "Bad staker");
@@ -193,7 +193,7 @@ contract Staking is Initializable, ReentrancyGuard, Pausable, Recoverable, IERC7
   }
 
   /**
-   * Owner can adjust required stake amount and duration.
+   * Oracle can adjust required stake amount and duration.
    */
   function setStakingParameters(uint _amount, uint _time) public {
     address sender = _msgSender();
@@ -272,7 +272,7 @@ contract Staking is Initializable, ReentrancyGuard, Pausable, Recoverable, IERC7
       revert("Unknown send() msg");
     }
 
-    stakeInternal(stakeId, staker, amount);
+    _stakeInternal(stakeId, staker, amount);
   }
 
 }

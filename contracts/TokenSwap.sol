@@ -11,7 +11,7 @@ import './Recoverable.sol';
 /**
  * Swap old 1ST token to new DAWN token.
  *
- * Recoverable allos us to recover any wrong tokens user send here by an accident.
+ * Recoverable allows us to recover any wrong ERC-20 tokens user send here by an accident.
  *
  * This contract *is not* behind a proxy.
  * We use Initializable pattern here to be in line with the other contracts.
@@ -22,8 +22,11 @@ import './Recoverable.sol';
  */
 contract TokenSwap is Initializable, ReentrancyGuard, Pausable, Ownable, Recoverable {
 
-  IERC20 oldToken;
-  IERC20 newToken;
+  /* Token coming for a burn */
+  IERC20 public oldToken;
+
+  /* Token sent to the swapper */
+  IERC20 public newToken;
 
   /* Where old tokens are send permantly to die */
   address public burnDestination;
@@ -35,7 +38,13 @@ contract TokenSwap is Initializable, ReentrancyGuard, Pausable, Ownable, Recover
   uint public totalSwapped;
 
   /* For following in the dashboard */
-  event Swapped(address owner, uint amount);
+  event Swapped(address indexed owner, uint amount);
+
+  /** When the contract owner sends old token to burn address */
+  event LegacyBurn(uint amount);
+
+  /** The server-side signer key has been updated */
+  event SignerUpdated(address addr);
 
   /**
    *
@@ -45,7 +54,6 @@ contract TokenSwap is Initializable, ReentrancyGuard, Pausable, Ownable, Recover
    * 4. Owner can pause swapping
    * 5. Owner can send tokens to be burned
    *
-   * @dev Using initializeTokenSwap() function name to avoid conflicts.
    */
   function initialize(address owner, address signer, address _oldToken, address _newToken, address _burnDestination)
     public initializer {
@@ -55,11 +63,12 @@ contract TokenSwap is Initializable, ReentrancyGuard, Pausable, Ownable, Recover
 
     // Deployer account holds temporary ownership until the setup is done
     Ownable.initialize(_msgSender());
-    setBurnDestination(_burnDestination);
     setSignerAddress(signer);
 
     Pausable.initialize(owner);
     _transferOwnership(owner);
+
+    _setBurnDestination(_burnDestination);
 
     oldToken = IERC20(_oldToken);
     newToken = IERC20(_newToken);
@@ -72,10 +81,9 @@ contract TokenSwap is Initializable, ReentrancyGuard, Pausable, Ownable, Recover
     address swapper = address(this);
     // We have added some user friendly error messages here if they
     // somehow manage to screw interaction
-    require(oldToken.balanceOf(msg.sender) >= amount, "You do not have enough tokens to swap");
-    require(oldToken.transferFrom(whom, swapper, amount) == true, "Could not retrieve old tokens");
-    require(newToken.transferFrom(owner(), whom, amount) == true, "Could not send new tokens");
     totalSwapped += amount;
+    require(oldToken.transferFrom(whom, swapper, amount), "Could not retrieve old tokens");
+    require(newToken.transferFrom(owner(), whom, amount), "Could not send new tokens");
   }
 
   /**
@@ -84,7 +92,7 @@ contract TokenSwap is Initializable, ReentrancyGuard, Pausable, Ownable, Recover
    * Note that this check does NOT use Ethereum message signing preamble:
    * https://ethereum.stackexchange.com/a/43984/620
    *
-   * Thus, youi cannot get v, r, s with user facing wallets, you need
+   * Thus, you cannot get v, r, s with user facing wallets, you need
    * to work for those using lower level tools.
    *
    */
@@ -95,6 +103,13 @@ contract TokenSwap is Initializable, ReentrancyGuard, Pausable, Ownable, Recover
       require(ecrecover(hashResult, v, r, s) == signerAddress, "Address was not properly signed by whitelisting server");
   }
 
+  /**
+   * A server-side whitelisted address can swap their tokens.
+   *
+   * @note After whitelisted once, the address can call this multiple times. This is intentional behavior.
+   *       As whitelisting per transaction is extra complexite that does not server any business goal.
+   *
+   */
   function swapTokensForSender(uint amount, uint8 v, bytes32 r, bytes32 s) public whenNotPaused {
     _checkSenderSignature(msg.sender, v, r, s);
     address swapper = address(this);
@@ -106,58 +121,39 @@ contract TokenSwap is Initializable, ReentrancyGuard, Pausable, Ownable, Recover
   }
 
   /**
-   * How much tokens have been swapped so far
-   */
-  function getCurrentlySwappedSupply() public view returns(uint) {
-    return oldToken.balanceOf(address(this));
-  }
-
-  /**
-   * How much tokens have been swapped so far
+   * How much new tokens we have loaded on the contract to swap.
    */
   function getTokensLeftToSwap() public view returns(uint) {
     return newToken.allowance(owner(), address(this));
   }
 
-  // Allows admin to burn old tokens
+  /**
+   * Allows admin to burn old tokens
+   *
+   * Note that the owner could recoverToken() here,
+   * before tokens are burned. However, the same
+   * owner can upload the code payload of the new token,
+   * so the trust risk for this to happen is low compared
+   * to other trust risks.
+   */
   function burn(uint amount) public onlyOwner {
     require(oldToken.transfer(burnDestination, amount), "Could not send tokens to burn");
+    emit LegacyBurn(amount);
   }
 
-  function setBurnDestination(address _destination) public onlyOwner {
+  /**
+   * Set the address (0x0000) where we are going to send burned tokens.
+   */
+  function _setBurnDestination(address _destination) internal {
     burnDestination = _destination;
   }
 
+  /**
+   * Allow to cycle the server-side signing key.
+   */
   function setSignerAddress(address _signerAddress) public onlyOwner {
     signerAddress = _signerAddress;
+    emit SignerUpdated(signerAddress);
   }
 
-  /**
-   * A test method exposed to be called from clients to compare that ABI packing and hashing
-   * is same across different programming languages.
-   *
-   * Does ABI encoding for an address and then calculates KECCAK-256 hash over the bytes.
-   *
-   * https://web3js.readthedocs.io/en/v1.2.0/web3-utils.html#soliditysha3
-   *
-   */
-  function calculateAddressHash(address a) public pure returns (bytes32 hash, bytes memory data) {
-
-    // First we ABI encode the address to bytes.
-    // This is so called "tight packing"
-    // https://web3js.readthedocs.io/en/v1.2.0/web3-utils.html#soliditysha3
-    bytes memory packed = abi.encodePacked(a);
-
-    // Then we calculate keccak256 over the resulting bytes
-    bytes32 hashResult = keccak256(packed);
-
-    return(hashResult, packed);
-  }
-
-  /**
-   * Expose ecrecover, so we can call it from console/tests and compare results.
-   */
-  function recoverAddress(bytes32 hash, uint8 v, bytes32 r, bytes32 s) public pure returns(address) {
-    return ecrecover(hash, v, r, s);
-  }
 }

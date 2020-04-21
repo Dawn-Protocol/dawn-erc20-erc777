@@ -24,7 +24,7 @@ contract Recoverable is Ownable {
   /// @dev This will be invoked by the owner, when owner wants to rescue tokens
   /// @param token Token which will we rescue to the owner from the contract
   function recoverTokens(IERC20 token) public onlyOwner {
-    token.transfer(owner(), tokensToBeReturned(token));
+    require(token.transfer(owner(), tokensToBeReturned(token)), "Transfer failed");
   }
 
   /// @dev Interface function, can be overwritten by the superclass
