@@ -6,6 +6,8 @@
 
 This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](https://firstblood.io).
 
+![badge](https://github.com/Dawn-Protocol/dawn-erc20-erc777/workflows/nodejs/badge.svg)
+
 # Introduction
 
 * Dawn token (DAWN) is a new token that is 1:1 swapped from the existing [FirstBlood 1ST token](https://github.com/Firstbloodio/token).
