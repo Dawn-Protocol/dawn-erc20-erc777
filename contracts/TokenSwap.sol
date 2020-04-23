@@ -19,6 +19,9 @@ import './Recoverable.sol';
  * base contracts from openzeppelin-contracts and openzeppelin-sdk both,
  * which is a huge mess.
  *
+ * We are not using SafeMath here, as we are not doing accounting math.
+ * user gets out the same amount of tokens they send in.
+ *
  */
 contract TokenSwap is Initializable, ReentrancyGuard, Pausable, Ownable, Recoverable {
 

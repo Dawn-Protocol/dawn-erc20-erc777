@@ -264,6 +264,31 @@ You can run them with Truffle by:
 truffle test conformance/ERC777.js
 ```
 
+# Security and audits
+
+Proxy and ERC-777 contracts are OpenZeppelin implementations from OpenZeppelin SDK 2.5.
+
+ERC-777 has been modified to make it pausable. Unfortunately OpenZeppelin SDK 2.5 did
+not yet support this behavior, so we had to create a contract `ERC777Overridable`.
+All token transaction facing functions have been made internal, so that
+`DawnTokenImpl` can add pausable guards around them.
+
+Zeppelin audit report is here.
+
+## Usage of SafeMath
+
+`TokenSwap` and `Staking` contracts do not use SafeMath library.
+This is because they do not do any kind of accounting math.
+The amount of tokens you send in is the amount of tokens you get out.
+Thus, the need for SafeMath is cosmetic.
+
+## Re-entrances
+
+An opportunity for a re-entrance condition exists in `Staking` contract
+as there is an ERC-777 receiver (`tokensReceived)
+and sender (`unstake`). Both functions have been
+guarded with re-entrance guards.
+
 # Linting
 
 Follow [AirBNB TypeScript Coding Conventions](https://www.npmjs.com/package/eslint-config-airbnb-typescript)

@@ -23,6 +23,9 @@ import './Recoverable.sol';
  * Staking happens by sending the correct amonut of tokens
  * to the contract using ERC-777 send().
  *
+ * We are not using SafeMath here, as we are not doing accounting math.
+ * user gets out the same amount of tokens they send in.
+ *
  */
 contract Staking is Initializable, ReentrancyGuard, Pausable, Recoverable, IERC777Recipient {
 
@@ -88,7 +91,6 @@ contract Staking is Initializable, ReentrancyGuard, Pausable, Recoverable, IERC7
 
   // Mew stake price oracle has been set
   event OracleChanged(address newOracle);
-
 
   /**
    * Set up the staking smart contract
