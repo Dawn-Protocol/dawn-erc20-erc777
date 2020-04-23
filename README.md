@@ -376,6 +376,50 @@ npx ts-node src/scripts/deployTestnet.ts
 ```sh
 npx ts-node src/scripts/deployTestnet.ts
 ```
+
+## Manipulating contracts in a console
+
+For admin tasks, like approving more tokens, the best way to interact
+with the contracts is through `ts-node` REPL.
+
+Open `ts-node`, start editor mode with `.editor` command
+and copy-paste in your manipulation script.
+
+Example below:
+
+```ts
+import { ZWeb3, Contracts } from '@openzeppelin/upgrades';
+import { Account } from 'eth-lib/lib';
+import { createProvider } from './src/utils/deploy';
+
+const OWNER_PRIVATE_KEY = '...'; // No 0x prefix
+const SWAP_BUDGET = '500000000000000000000000';
+const INFURA_PROJECT_ID = '...';
+
+async function run(): Promise<void> {
+  // Initialze
+  const provider = createProvider([OWNER_PRIVATE_KEY], INFURA_PROJECT_ID, 'ropsten');
+  ZWeb3.initialize(provider);
+
+  // Instiate contracts
+  const TokenFaucet = Contracts.getFromLocal('TokenFaucet');
+  const FirstBloodTokenMock = Contracts.getFromLocal('FirstBloodTokenMock');
+  const faucet = TokenFaucet.at('0xC5dec1bB818fbC753D8aFE3aC9275268F8204695');
+  const oldToken = FirstBloodTokenMock.at('0x9517FC874877A4510A3dE617d0c2517D29E5aD32');
+
+  console.log('Connected to', await ZWeb3.getNetworkName(), 'network');
+  const owner = Account.fromPrivate(`0x${OWNER_PRIVATE_KEY}`).address;
+
+  const promise = oldToken.methods.transfer(faucet.address, SWAP_BUDGET.toString()).send({ from: owner });
+  console.log('Sending transaction');
+  const receipt = await promise;
+  console.log('Transaction complete', receipt);
+  process.exit(0);
+}
+
+run();
+```
+
 # Testnet deployment
 
 ## Ropsten

@@ -58,8 +58,8 @@ const envOptions = {
 
 const BURN_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-// How many tokens we approve for the swap 5000_000_000_000_000_000_000
-const SWAP_BUDGET = '5000000000000000000000';
+// How many tokens we approve for the swap 500000_000_000_000_000_000_000
+const SWAP_BUDGET = '500000000000000000000000';
 
 // Test staking price is 2.5 tokens
 const STAKING_PRICE = '2500000000000000000';
