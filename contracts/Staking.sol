@@ -164,7 +164,7 @@ contract Staking is Initializable, ReentrancyGuard, Pausable, Recoverable, IERC7
    * Check if a stakeId has been allocated
    */
   function isStake(uint128 stakeId) public view returns (bool) {
-    return stakes[stakeId].amount != 0;
+    return stakes[stakeId].owner != address(0x0);
   }
 
   /**
