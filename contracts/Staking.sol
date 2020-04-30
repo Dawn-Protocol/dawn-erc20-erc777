@@ -177,12 +177,19 @@ contract Staking is Initializable, ReentrancyGuard, Pausable, Recoverable, IERC7
   /**
    * Send tokens back to the staker.
    *
-   * It is possible to unstake on behalf of others.
+   * It is not possible to unstake behalf of others.
+   * The business rationale on this is that the stake duration
+   * can be seen similarly as the minimum subscription period.
+   * However, the user is free to continue the subscription
+   * as long as he wants and this position should not be
+   * forcefully terminated.
    */
   function unstake(uint128 stakeId) public whenNotPaused nonReentrant {
     Stake memory s = stakes[stakeId];
+
     require(s.endsAt != 0, "Already unstaked");
     require(now >= s.endsAt, "Unstaking too soon");
+    require(_msgSender() == s.owner, "Only owner can unstake");
 
     // Mark the stake released
     stakes[stakeId].endsAt = 0;

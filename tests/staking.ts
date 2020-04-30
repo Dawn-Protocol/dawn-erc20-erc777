@@ -417,7 +417,7 @@ test('User can stake behalf of another', async () => {
 });
 
 
-test('User can unstake behalf of another', async () => {
+test('User cannot unstake behalf of another', async () => {
   // Give user some tokens to stake
   await newToken.transfer(user, STAKE_PRICE, { from: owner });
   // Create a user data for ERC-777 send()
@@ -430,14 +430,10 @@ test('User can unstake behalf of another', async () => {
   const { endsAt } = await staking.getStakeInformation(stakeId);
   const now = (await time.latest()).toNumber();
   assert(now > endsAt.toNumber());
-  const receipt2 = await staking.unstake(stakeId, { from: user2 });
-  // Tokens where sent back to the user
-  assert((await newToken.balanceOf(user)).toNumber() === STAKE_PRICE);
-  expectEvent(receipt2, 'Unstaked', {
-    staker: user,
-    // stakeId: new BN(stakeId), fails to parse logs correctly?
-    amount: new BN(STAKE_PRICE),
-  });
+  expectRevert(
+    staking.unstake(stakeId, { from: user2 }),
+    'Only owner can unstake',
+  );
 });
 
 
