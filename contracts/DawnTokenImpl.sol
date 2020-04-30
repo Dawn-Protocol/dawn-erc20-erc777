@@ -52,6 +52,7 @@ contract DawnTokenImpl is ERC777Overridable, Recoverable, Pausable {
     Pausable.initialize(manager);
 
     // Same as in 1ST token
+    // https://etherscan.io/token/0xaf30d2a7e90d7dc361c8c4585e9bb7d2f6f15bc7
     uint INITIAL_SUPPLY = 93468683899196345527500000;
 
     // Mint the initial supply
