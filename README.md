@@ -390,7 +390,7 @@ Example below:
 ```ts
 import { ZWeb3, Contracts } from '@openzeppelin/upgrades';
 import { Account } from 'eth-lib/lib';
-import { createProvider } from './src/utils/deploy';
+import { createProider } from './src/utils/deploy';
 
 const OWNER_PRIVATE_KEY = '...'; // No 0x prefix
 const SWAP_BUDGET = '500000000000000000000000';
@@ -420,6 +420,44 @@ async function run(): Promise<void> {
 run();
 ```
 
+## Getting ABI encodings from a console
+
+ABI encoding allows you to input the raw `Data` value of Ethereum transaction field,
+allowing to manipulate contracts from the wallet that do not have native web3.js support.
+One of such wallets is Gnosis Safe multisig wallet 2.0.
+
+Here is an example how to get `Data` parameters for an arbitrary contract transaction,
+using `approve()` as an example.
+
+```ts
+import { ZWeb3, Contracts } from '@openzeppelin/upgrades';
+import { createProvider } from './src/utils/deploy';
+
+const INFURA_PROJECT_ID = '...';
+
+async function run(): Promise<void> {
+  // Initialze
+  const provider = createProvider([], INFURA_PROJECT_ID, 'mainnet');
+  ZWeb3.initialize(provider);
+
+  // Instiate contracts
+  const DawnTokenImpl = Contracts.getFromLocal('DawnTokenImpl');
+  const TokenSwap = Contracts.getFromLocal('TokenSwap');
+  const token = DawnTokenImpl.at('0x580c8520dEDA0a441522AEAe0f9F7A5f29629aFa');
+  const tokenSwap = DawnTokenImpl.at('0x2e776B7BFb8E8307E476BA4B77B21D4532ed47d2');
+  const holder = '0xedae4cfB12ECfCDE46853f63aBa76D8EA3CF3871';
+
+  // Read the full balance of the multisig wallet
+  const allOfBalance = await token.methods.balanceOf('0xedae4cfB12ECfCDE46853f63aBa76D8EA3CF3871').call();
+
+  // Approve this balance to be used for the token swap
+  const dataPayload = token.methods.approve(tokenSwap.address, allOfBalance).encodeABI();
+  console.log('Data payload for approve() tx is', dataPayload);
+}
+
+run();
+```
+
 # Deployments
 
 ## Ethereum mainnet
@@ -429,6 +467,8 @@ DAWN token: 0x580c8520dEDA0a441522AEAe0f9F7A5f29629aFa
 Token Swap: 0x2e776B7BFb8E8307E476BA4B77B21D4532ed47d2
 
 Staking: 0x0B7C98Ba6235952BA847209C35189846A1706BC9
+
+1ST token: 0xaf30d2a7e90d7dc361c8c4585e9bb7d2f6f15bc7
 
 ## Ropsten
 
