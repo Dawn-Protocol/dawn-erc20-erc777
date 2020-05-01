@@ -420,7 +420,15 @@ async function run(): Promise<void> {
 run();
 ```
 
-# Testnet deployment
+# Deployments
+
+## Ethereum mainnet
+
+DAWN token: 0x580c8520dEDA0a441522AEAe0f9F7A5f29629aFa
+
+Token Swap: 0x2e776B7BFb8E8307E476BA4B77B21D4532ed47d2
+
+Staking: 0x0B7C98Ba6235952BA847209C35189846A1706BC9
 
 ## Ropsten
 
