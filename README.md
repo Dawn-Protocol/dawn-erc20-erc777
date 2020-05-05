@@ -1,15 +1,52 @@
-# Welcome to the New Begining
-
 <img src="https://i.postimg.cc/4dvwcKJ9/logo.png" width="340">
 
-#### Dawn is a global, self-governed, and open-sourced protocol that empowers and rewards gamers.</br>
+</br>
 
 This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](https://firstblood.io).
+Dawn is a global, self-governed, and open-sourced protocol that empowers and rewards gamers.
+
 
 ![badge](https://github.com/Dawn-Protocol/dawn-erc20-erc777/workflows/Node.js%20CI/badge.svg)
 
-
-
+- [Introduction](#introduction)
+- [Software required](#software-required)
+- [Overview](#overview)
+- [Base packages](#base-packages)
+  * [Token](#token)
+    + [Token deployment](#token-deployment)
+  * [Token swap](#token-swap)
+    + [Token swap deployment](#token-swap-deployment)
+  * [Staking](#staking)
+  * [Flash staking](#flash-staking)
+    + [Staking deployment](#staking-deployment)
+  * [Recoverable](#recoverable)
+  * [TokenFaucet](#tokenfaucet)
+- [Testing](#testing)
+  * [Running a single text](#running-a-single-text)
+  * [Running a single test module](#running-a-single-test-module)
+  * [Debugging tests in Visual Studio Code](#debugging-tests-in-visual-studio-code)
+    + [Automatically attaching to a terminal command](#automatically-attaching-to-a-terminal-command)
+    + [Using Launch config](#using-launch-config)
+- [Conformance suite](#conformance-suite)
+- [Security discussion](#security-discussion)
+  * [Usage of SafeMath](#usage-of-safemath)
+  * [Re-entrances](#re-entrances)
+- [Linting](#linting)
+  * [Visual Studio Code](#visual-studio-code)
+  * [Prettier](#prettier)
+  * [Command line](#command-line)
+- [Deploying](#deploying)
+  * [Testnet](#testnet)
+  * [Manipulating contracts in a console](#manipulating-contracts-in-a-console)
+  * [Getting ABI encodings from a console](#getting-abi-encodings-from-a-console)
+- [Deployments](#deployments)
+  * [Ethereum mainnet](#ethereum-mainnet)
+  * [Ropsten](#ropsten)
+  * [Goerli](#goerli)
+- [Audits](#audits)
+  * [Audits for this project](#audits-for-this-project)
+  * [Related audits and information](#related-audits-and-information)
+- [Other](#other)
 
 # Introduction
 
@@ -267,7 +304,7 @@ You can run them with Truffle by:
 truffle test conformance/ERC777.js
 ```
 
-# Security and audits
+# Security discussion
 
 Proxy and ERC-777 contracts are OpenZeppelin implementations from OpenZeppelin SDK 2.5.
 
