@@ -11,7 +11,7 @@
  */
 
 import { resolve } from 'path';
-import { Proxy, ZWeb3, Contracts } from '@openzeppelin/upgrades';
+import { ZWeb3, Contracts } from '@openzeppelin/upgrades';
 import * as envalid from 'envalid';
 import { Account } from 'eth-lib/lib'; // https://github.com/MaiaVictor/eth-lib/blob/master/src/account.js
 
