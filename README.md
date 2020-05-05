@@ -8,6 +8,9 @@ This is a Dawn ERC-20 token for [FirstBlood decentralised eSports platform](http
 
 ![badge](https://github.com/Dawn-Protocol/dawn-erc20-erc777/workflows/Node.js%20CI/badge.svg)
 
+
+
+
 # Introduction
 
 * Dawn token (DAWN) is a new token that is 1:1 swapped from the existing [FirstBlood 1ST token](https://github.com/Firstbloodio/token).
@@ -552,36 +555,13 @@ Staking {
 }
 ```
 
-# Production deployment strategy
-
-Two different multi-signature wallets are needed.
-
-* Token owner who is responsible for admin functions for the token contract itself like `pause()` from `ERC20Pausable`
-
-* Proxy owner who is responsible for calling `upgradeTo()` if a contract upgrade is needed
-
-* [Due to the fact how Proxy contract works, these two addresses cannot be the same wallet](https://docs.openzeppelin.com/upgrades/2.7/proxies#transparent-proxies-and-function-clashes)
-
-# Slither
-
-Slither automated security audits.
-
-Install
-
-```sh
-python3 -m venv venv
-source venv/bin/active
-pip install slither-analyzer
-```
-
-Running
-
-```
-export SOLC_VERSION=0.5.16
-slither --solc ./dockerized-solc.sh .
-```
-
 # Audits
+
+## Audits for this project
+
+* [Audit report by Ville Sundell](./docs/audit_ville_sundell.pdf)
+
+## Related audits and information
 
 * [The latest audit report for OpenZeppelin SDK contracts](https://medium.com/nomic-labs-blog/zeppelinos-smart-contracts-audit-iv-a52987973b88)
 
