@@ -204,7 +204,7 @@ test('User can stake their tokens', async () => {
   const log = receipt.receipt.rawLogs[2];
   const event = decodeEvent(Staking, log, 'Staked');
   // Compare raw numbers and normalize any leading zero problems
-  assert((new BN(event.stakeId)).toString(16) === new BN(stakeId).toString(16));
+  assert((new BN(event.stakeId)).toString(16).toLowerCase() == stakeId.toLowerCase().substring(2));
   assert(event.amount === STAKE_PRICE.toString());
   assert(event.staker === user);
   assert(event.endsAt === endsAt.toString());
@@ -410,7 +410,7 @@ test('User can stake behalf of another', async () => {
   // In the logs we have Send, Transfer, Staking, so taking event is the last
   const log = receipt.receipt.rawLogs[2];
   const event = decodeEvent(Staking, log, 'Staked');
-  assert((new BN(event.stakeId)).toString(16) === stakeId.substring(2));
+  assert((new BN(event.stakeId)).toString(16).toLowerCase() === stakeId.toLowerCase().substring(2));
   assert(event.amount === STAKE_PRICE.toString());
   assert(event.staker === user2);
   assert(event.endsAt === endsAt.toString());
