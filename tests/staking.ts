@@ -204,7 +204,7 @@ test('User can stake their tokens', async () => {
   const log = receipt.receipt.rawLogs[2];
   const event = decodeEvent(Staking, log, 'Staked');
   // Compare raw numbers and normalize any leading zero problems
-  assert((new BN(event.stakeId)).toString(16).toLowerCase() == stakeId.toLowerCase().substring(2));
+  assert((new BN(event.stakeId)).toString(16).toLowerCase() === stakeId.toLowerCase().substring(2));
   assert(event.amount === STAKE_PRICE.toString());
   assert(event.staker === user);
   assert(event.endsAt === endsAt.toString());
