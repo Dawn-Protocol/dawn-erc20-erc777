@@ -68,7 +68,7 @@ async function run(): Promise<void> {
   const oracleAccount = Account.fromPrivate(`0x${oraclePrivateKeyHex}`);
 
   ZWeb3.initialize(provider);
-  const { web3 } = ZWeb3.web3;
+  const { web3 } = ZWeb3;
 
   // Instiate contracts
   const Staking = Contracts.getFromLocal('Staking');
