@@ -68,6 +68,7 @@
     "axios": "^0.19.2",
     "bn.js": "^5.1.1",
     "envalid": "^6.0.1",
+    "eth-json-rpc-filters": "^4.2.2",
     "eth-lib": "^0.1.29",
     "truffle-hdwallet-provider": "^1.0.17",
     "uuid": "^7.0.3",
