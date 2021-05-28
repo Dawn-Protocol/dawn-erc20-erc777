@@ -7,12 +7,13 @@
  */
 
 
-import { ZWeb3, Contracts } from '@openzeppelin/upgrades';
 import { resolve as resolvePath } from 'path';
 import { Account } from 'eth-lib/lib'; // https://github.com/MaiaVictor/eth-lib/blob/master/src/account.js
 import * as envalid from 'envalid';
-
-import { createProvider } from '../utils/deploy';
+const Web3 = require('web3');
+const HDWalletProvider = require("@truffle/hdwallet-provider");
+import { abi } from "../../build/contracts/Staking.json";
+import { isAddress } from 'web3-utils';
 
 // Get config file from the command line or fallback to the default
 const configPath = process.argv[2] || 'secrets/oracle.ini';
@@ -62,27 +63,30 @@ async function run(): Promise<void> {
     newStakeAmountTokens,
   } = envalid.cleanEnv(process.env, inputs, envOptions);
 
-  // Initialze
-  const deploymentKeys = [oraclePrivateKeyHex];
-  const provider = createProvider(deploymentKeys, infuraProjectId, network);
-  const oracleAccount = Account.fromPrivate(`0x${oraclePrivateKeyHex}`);
+  // const provider = createProvider(deploymentKeys, infuraProjectId, network);
+  // const oracleAccount = Account.fromPrivate(`0x${oraclePrivateKeyHex}`);
 
-  ZWeb3.initialize(provider);
-  const { web3 } = ZWeb3;
+  // ZWeb3.initialize(provider);
+  const provider = new Web3.providers.HttpProvider(`https://mainnet.infura.io/v3/${infuraProjectId}`);
+  const localKeyProvider = new HDWalletProvider({
+    privateKeys: [oraclePrivateKeyHex],
+    providerOrUrl: provider,
+  });
+  const web3 = new Web3(localKeyProvider);
 
-  // Instiate contracts
-  const Staking = Contracts.getFromLocal('Staking');
-  const staking = Staking.at('0x0B7C98Ba6235952BA847209C35189846A1706BC9');
+  const oracleAccount = web3.eth.accounts.privateKeyToAccount(oraclePrivateKeyHex);
+
+  const address = '0x0B7C98Ba6235952BA847209C35189846A1706BC9';
+  const staking = new web3.eth.Contract(abi as any, address);
 
   // Read the full balance of the multisig wallet
   const currentDuration = await staking.methods.stakingTime().call();
   const currentAmount = await staking.methods.stakingAmount().call();
-
   const newAmountRaw = web3.utils.toWei(newStakeAmountTokens, 'ether');
   const newDuration = currentDuration;
   const days = newDuration / (24 * 3600);
 
-  console.log('Oracle is', oracleAccount.address, 'Staking contract is', staking.address);
+  console.log('Oracle account is', oracleAccount.address, ', staking contract is', address);
   console.log('Setting new duration ', newDuration, 'seconds (', days, 'days) and new staking amount', newAmountRaw, 'tokens (old amount ', currentAmount, ') [y/n]');
   const reply = await readlineSync();
 
