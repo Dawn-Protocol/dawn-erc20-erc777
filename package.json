@@ -65,7 +65,7 @@
   "dependencies": {
     "@openzeppelin/upgrades": "^2.7.2",
     "@truffle/hdwallet-provider": "^1.0.33",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "bn.js": "^5.1.1",
     "envalid": "^6.0.1",
     "eth-json-rpc-filters": "^4.2.2",
