@@ -32,7 +32,7 @@
     "url": "https://github.com/firstblood/dawn-erc20.git"
   },
   "devDependencies": {
-    "@openzeppelin/contracts": "^2.5.0",
+    "@openzeppelin/contracts": "^4.7.2",
     "@openzeppelin/contracts-ethereum-package": "^2.4.0",
     "@openzeppelin/test-environment": "^0.1.3",
     "@openzeppelin/test-helpers": "^0.5.4",
