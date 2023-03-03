@@ -57,7 +57,7 @@
     "power-assert": "^1.6.1",
     "prettier": "^1.19.1",
     "solc": "^0.5.16",
-    "truffle": "^5.1.17",
+    "truffle": "^5.7.9",
     "ts-jest": "^25.2.1",
     "ts-node": "^8.6.2",
     "typescript": "^3.8.3"
